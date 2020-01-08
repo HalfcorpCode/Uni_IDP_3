@@ -13,4 +13,6 @@ for i in range(101):
         print("Buzz")
     else:
         print(str(i))
-        
+
+
+print("This code is amazing!")
