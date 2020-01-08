@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 """
-Created on Wed Jan  8 01:42:18 2020
-
-@author: The Halflife390
+FizzBuzz Program
+Gianluca Cantone 2019
 """
 
 for i in range(101):
