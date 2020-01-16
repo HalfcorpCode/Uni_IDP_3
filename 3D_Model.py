@@ -17,50 +17,6 @@ from mpl_toolkits import mplot3d
 
 #Main Program =================================================================
 
-fig = plt.figure()
-ax = plt.axes(projection='3d') #proj_type = 'ortho'
-
-plt.title("Barry Harbour Surface Plot")
-ax.set_xlabel("X Axis")
-ax.set_ylabel("Y Axis")
-ax.set_zlabel("Z Axis")
-
-'''
-1. Program initializes coordinate arrays
-2. Known coordinates are laoded into arrays
-3. Intermediate values are interpolated and added into arrays
-4. Integration algorithm integrates across grid at a given height, some new coordiantes will have to be interpolated from known coordinates.
-
-Dummy test: 10x10 grid with edges initialized at 0. Dip in middle that will be interpolated outwards.
-'''
-
-X_Grid = np.array([[0,0,2,3,4],
-                   [0,1,2,3,4],
-                   [0,0,2,3,4],
-                   [0,0,2,3,4],
-                   [0,1,2,3,4]])
-
-Y_Grid = np.array([[0,0,0,0,0],
-                   [1,1,1,1,1],
-                   [2,2,2,2,2],
-                   [3,4,4,3,3],
-                   [4,4,4,4,4]])
-
-Z_Grid = np.array([[1,0,0,0,1],
-                   [1,0,0,0,1],
-                   [1,0.5,0.5,0.5,1],
-                   [1,0.5,0.5,0.5,1],
-                   [1,1,1,1,1]])
-
-#ax.plot_wireframe(X_Grid, Y_Grid, Z_Grid, color="red")
-#ax.plot_surface(X_Grid, Y_Grid, Z_Grid, color="red")
-
-#x = np.linspace(0, 10, 11)
-#y = np.linspace(0, 10, 11)
-#
-#
-#ax.plot_wireframe(X, Y, Z2, color="green")
-
 '''
 Precision to 2 dp
 Constant = 0.01590579
@@ -139,10 +95,6 @@ Contour_Map_Z = np.array([[13.00,13.00,13.00,13.00,13.00,13.00,13.00,13.00,13.00
                           [13.00,12.00,12.00,12.00,12.00,12.00,12.00,12.00,12.00,12.00,12.00,12.00,13.00],
                           [13.00,13.00,13.00,13.00,13.00,13.00,13.00,13.00,13.00,13.00,13.00,13.00,13.00]])
 
-#ax.set_xlim3d(0, 1000)
-#ax.set_ylim3d(0,1000)
-#ax.set_zlim3d(0,1000)
-
 Ocean_X = np.array([[-600,1000],
                    [-600,1000]])
 Ocean_Y = np.array([[1500,1500],
@@ -150,17 +102,22 @@ Ocean_Y = np.array([[1500,1500],
 Ocean_Z = np.array([[4,4],
                    [4,4]])
 
-#plt.axis('equal')
+fig = plt.figure(figsize=plt.figaspect(1)*2)
+ax = plt.axes(projection='3d') #proj_type = 'ortho'
+
+plt.title("Barry Harbour Surface Plot")
+ax.set_xlabel("X Axis")
+ax.set_ylabel("Y Axis")
+ax.set_zlabel("Z Axis")
 
 ax.set_xlim3d(-1500,1500)
 ax.set_ylim3d(-1500,1500)
 ax.set_zlim3d(-150,150)
 
-ax.plot_wireframe(Ocean_X, Ocean_Y, Ocean_Z, color='blue', edgecolor="black", alpha=0.5)
+#plt.axis('scaled')
+
+#ax.plot_wireframe(Ocean_X, Ocean_Y, Ocean_Z, color='blue', edgecolor="black", alpha=0.5)
 ax.plot_surface(Contour_Map_X, Contour_Map_Y, Contour_Map_Z, cmap='Greens', edgecolor="black")
-
-
-
 
 
 
