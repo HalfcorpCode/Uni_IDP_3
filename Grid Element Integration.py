@@ -30,7 +30,9 @@ Side 3 - Element 1 & 2 boundary, surface plot comnputed from Ocean and Surface
 Boundary exists between coordinate 2 and 4 
 """
 
-def view_element(Surface, Height):
+def view_element(Surface, Height, Tet):
+    
+    #Calculate surface coordinates
     
     Surface_X = np.array([Surface[0][0], Surface[1][0], Surface[2][0], Surface[3][0]])
     Surface_Y = np.array([Surface[0][1], Surface[1][1], Surface[2][1], Surface[3][1]])
@@ -59,7 +61,11 @@ def view_element(Surface, Height):
     Side_3_X = np.array([[Surface[1][0], Surface[3][0]], [Surface[1][0], Surface[3][0]]])
     Side_3_Y = np.array([[Surface[1][1], Surface[3][1]], [Surface[1][1], Surface[3][1]]])
     Side_3_Z = np.array([[Height, Height], [Surface[1][2], Surface[3][2]]])
-
+    
+    '''
+    Check if ocean intersects floor
+    
+    '''
     
     fig = plt.figure(figsize=plt.figaspect(1)*2)
     ax = plt.axes(projection='3d')
@@ -75,18 +81,21 @@ def view_element(Surface, Height):
     ax.plot_surface(E1S2_X, E1S2_Y, E1S2_Z, color="green", alpha=0.5, edgecolor="black")
     ax.plot_surface(E2S1_X, E2S1_Y, E2S1_Z, color="green", alpha=0.5, edgecolor="black")
     ax.plot_surface(E2S2_X, E2S2_Y, E2S2_Z, color="green", alpha=0.5, edgecolor="black")
-    ax.plot_surface(Side_3_X, Side_3_Y, Side_3_Z, color="red", alpha=0.5, edgecolor="black")
-    
-def Integrate():
-    
-    '''
-    Process:
+    ax.plot_surface(Side_3_X, Side_3_Y, Side_3_Z, color="darkgreen", alpha=0.5, edgecolor="black")
+
+    if Tet == "-t":
         
-    Step 1: Normalize coordinates so O1 is origin (O)
-    Step 2: 
-    Step 3:
-    Step 3:Ocean 1 and 3 become your x axis, Ocean 1 is origin
-    Step 3:Integrate x axis from the line from Ocean 1 to Ocean 2 and the line Ocean 2 to Ocean 3
+        #Calculate tetrahedrons coordinates
+        
+        Tet1_X = np.array([Surface[0][0], Surface[1][0], Surface[3][0]])
+        Tet1_Y = np.array([Surface[0][1], Surface[1][1], Surface[3][1]])
+        Tet1_Z = np.array([Surface[1][2], Surface[1][2], Surface[3][2]])
+        ax.plot_trisurf(Tet1_X, Tet1_Y, Tet1_Z, color="red", alpha=0.5)
+        
+        Tet1_X = np.array([Surface[0][0], Surface[1][0], Surface[3][0]])
+        Tet1_Y = np.array([Surface[0][1], Surface[1][1], Surface[3][1]])
+        Tet1_Z = np.array([Surface[1][2], Surface[1][2], Surface[1][2]])
+        ax.plot_trisurf(Tet1_X, Tet1_Y, Tet1_Z, color="red", alpha=0.5)
 
 def test():
     
@@ -121,3 +130,31 @@ def test():
     ax.plot_trisurf(S2_X, S2_Y, S2_Z)
     ax.plot_trisurf(S3_X, S3_Y, S3_Z)
     ax.plot_surface(S4_X, S4_Y, S4_Z, alpha=0.5)
+    
+def T_Volume(Coords):
+    
+    '''Volume = 1/6 ((A to D) DOT ((A to B) X (A to C)))'''
+    return 1/6*(np.dot(np.cross(Vector_Diff([Coords[0], Coords[1]]),Vector_Diff([Coords[0], Coords[2]])), Vector_Diff([Coords[0], Coords[3]])))
+        
+def Vector_Diff(Vectors):
+    
+    Result = [0,0,0]
+    Result[0]= Vectors[1][0]-Vectors[0][0]
+    Result[1]= Vectors[1][1]-Vectors[0][1]
+    Result[2]= Vectors[1][2]-Vectors[0][2]
+    
+    return Result
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
