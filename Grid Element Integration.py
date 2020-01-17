@@ -32,7 +32,6 @@ Boundary exists between coordinate 2 and 4
 
 def view_element(Surface, Height):
     
-    
     Surface_X = np.array([Surface[0][0], Surface[1][0], Surface[2][0], Surface[3][0]])
     Surface_Y = np.array([Surface[0][1], Surface[1][1], Surface[2][1], Surface[3][1]])
     Surface_Z = np.array([Surface[0][2], Surface[1][2], Surface[2][2], Surface[3][2]])
@@ -50,12 +49,12 @@ def view_element(Surface, Height):
     E1S2_Z = np.array([[Height, Height], [Surface[0][2], Surface[3][2]]])
     
     E2S1_X = np.array([[Surface[3][0], Surface[2][0]], [Surface[3][0], Surface[2][0]]])
-    E2S1_Y = np.array([[Surface[0][1], Surface[1][1]], [Surface[0][1], Surface[1][1]]])
-    E2S1_Z = np.array([[Height, Height], [Surface[2][2], Surface[3][2]]])
+    E2S1_Y = np.array([[Surface[3][1], Surface[2][1]], [Surface[3][1], Surface[2][1]]])
+    E2S1_Z = np.array([[Height, Height], [Surface[3][2], Surface[2][2]]])
     
-    E2S2_X = np.array([[Surface[0][0], Surface[3][0]], [Surface[1][0], Surface[3][0]]])
+    E2S2_X = np.array([[Surface[1][0], Surface[2][0]], [Surface[1][0], Surface[2][0]]])
     E2S2_Y = np.array([[Surface[1][1], Surface[2][1]], [Surface[1][1], Surface[2][1]]])
-    E2S2_Z = np.array([[Height, Height], [Surface[1][2], Surface[3][2]]])
+    E2S2_Z = np.array([[Height, Height], [Surface[1][2], Surface[2][2]]])
     
     Side_3_X = np.array([[Surface[1][0], Surface[3][0]], [Surface[1][0], Surface[3][0]]])
     Side_3_Y = np.array([[Surface[1][1], Surface[3][1]], [Surface[1][1], Surface[3][1]]])
@@ -77,6 +76,17 @@ def view_element(Surface, Height):
     ax.plot_surface(E2S1_X, E2S1_Y, E2S1_Z, color="green", alpha=0.5, edgecolor="black")
     ax.plot_surface(E2S2_X, E2S2_Y, E2S2_Z, color="green", alpha=0.5, edgecolor="black")
     ax.plot_surface(Side_3_X, Side_3_Y, Side_3_Z, color="red", alpha=0.5, edgecolor="black")
+    
+def Integrate():
+    
+    '''
+    Process:
+        
+    Step 1: Normalize coordinates so O1 is origin (O)
+    Step 2: 
+    Step 3:
+    Step 3:Ocean 1 and 3 become your x axis, Ocean 1 is origin
+    Step 3:Integrate x axis from the line from Ocean 1 to Ocean 2 and the line Ocean 2 to Ocean 3
 
 def test():
     
