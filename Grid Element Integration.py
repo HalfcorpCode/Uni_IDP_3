@@ -30,7 +30,7 @@ Side 3 - Element 1 & 2 boundary, surface plot comnputed from Ocean and Surface
 Boundary exists between coordinate 2 and 4 
 """
 
-def view_element(Surface, Height, Tet):
+def Integrate_Element(Surface, Height, View, Tet):
     
     #Calculate surface coordinates
     
@@ -42,41 +42,43 @@ def view_element(Surface, Height, Tet):
     Ocean_Y = np.array([[Surface[0][1], Surface[1][1]], [Surface[3][1], Surface[2][1]]])
     Ocean_Z = np.array([[Height, Height], [Height, Height]])
     
-    E1S1_X = np.array([[Surface[0][0], Surface[1][0]], [Surface[0][0], Surface[1][0]]])
-    E1S1_Y = np.array([[Surface[0][1], Surface[1][1]], [Surface[0][1], Surface[1][1]]])
-    E1S1_Z = np.array([[Height, Height], [Surface[0][2], Surface[1][2]]])
+    if View == "-v":
     
-    E1S2_X = np.array([[Surface[0][0], Surface[3][0]], [Surface[0][0], Surface[3][0]]])
-    E1S2_Y = np.array([[Surface[0][1], Surface[3][1]], [Surface[0][1], Surface[3][1]]])
-    E1S2_Z = np.array([[Height, Height], [Surface[0][2], Surface[3][2]]])
-    
-    E2S1_X = np.array([[Surface[3][0], Surface[2][0]], [Surface[3][0], Surface[2][0]]])
-    E2S1_Y = np.array([[Surface[3][1], Surface[2][1]], [Surface[3][1], Surface[2][1]]])
-    E2S1_Z = np.array([[Height, Height], [Surface[3][2], Surface[2][2]]])
-    
-    E2S2_X = np.array([[Surface[1][0], Surface[2][0]], [Surface[1][0], Surface[2][0]]])
-    E2S2_Y = np.array([[Surface[1][1], Surface[2][1]], [Surface[1][1], Surface[2][1]]])
-    E2S2_Z = np.array([[Height, Height], [Surface[1][2], Surface[2][2]]])
-    
-    Side_3_X = np.array([[Surface[1][0], Surface[3][0]], [Surface[1][0], Surface[3][0]]])
-    Side_3_Y = np.array([[Surface[1][1], Surface[3][1]], [Surface[1][1], Surface[3][1]]])
-    Side_3_Z = np.array([[Height, Height], [Surface[1][2], Surface[3][2]]])
-    
-    fig = plt.figure(figsize=plt.figaspect(1)*2)
-    ax = plt.axes(projection='3d')
-    
-    plt.title("Integration Element (Two Triangular Pieces)")
-    ax.set_xlabel("X Axis")
-    ax.set_ylabel("Y Axis")
-    ax.set_zlabel("Z Axis")
-    
-    ax.plot_trisurf(Surface_X, Surface_Y, Surface_Z, color="grey")
-    ax.plot_surface(Ocean_X, Ocean_Y, Ocean_Z, color="blue")
-    ax.plot_surface(E1S1_X, E1S1_Y, E1S1_Z, color="green", alpha=0.5, edgecolor="black")
-    ax.plot_surface(E1S2_X, E1S2_Y, E1S2_Z, color="green", alpha=0.5, edgecolor="black")
-    ax.plot_surface(E2S1_X, E2S1_Y, E2S1_Z, color="green", alpha=0.5, edgecolor="black")
-    ax.plot_surface(E2S2_X, E2S2_Y, E2S2_Z, color="green", alpha=0.5, edgecolor="black")
-    ax.plot_surface(Side_3_X, Side_3_Y, Side_3_Z, color="darkgreen", alpha=0.5, edgecolor="black")
+        E1S1_X = np.array([[Surface[0][0], Surface[1][0]], [Surface[0][0], Surface[1][0]]])
+        E1S1_Y = np.array([[Surface[0][1], Surface[1][1]], [Surface[0][1], Surface[1][1]]])
+        E1S1_Z = np.array([[Height, Height], [Surface[0][2], Surface[1][2]]])
+        
+        E1S2_X = np.array([[Surface[0][0], Surface[3][0]], [Surface[0][0], Surface[3][0]]])
+        E1S2_Y = np.array([[Surface[0][1], Surface[3][1]], [Surface[0][1], Surface[3][1]]])
+        E1S2_Z = np.array([[Height, Height], [Surface[0][2], Surface[3][2]]])
+        
+        E2S1_X = np.array([[Surface[3][0], Surface[2][0]], [Surface[3][0], Surface[2][0]]])
+        E2S1_Y = np.array([[Surface[3][1], Surface[2][1]], [Surface[3][1], Surface[2][1]]])
+        E2S1_Z = np.array([[Height, Height], [Surface[3][2], Surface[2][2]]])
+        
+        E2S2_X = np.array([[Surface[1][0], Surface[2][0]], [Surface[1][0], Surface[2][0]]])
+        E2S2_Y = np.array([[Surface[1][1], Surface[2][1]], [Surface[1][1], Surface[2][1]]])
+        E2S2_Z = np.array([[Height, Height], [Surface[1][2], Surface[2][2]]])
+        
+        Side_3_X = np.array([[Surface[1][0], Surface[3][0]], [Surface[1][0], Surface[3][0]]])
+        Side_3_Y = np.array([[Surface[1][1], Surface[3][1]], [Surface[1][1], Surface[3][1]]])
+        Side_3_Z = np.array([[Height, Height], [Surface[1][2], Surface[3][2]]])
+        
+        fig = plt.figure(figsize=plt.figaspect(1)*2)
+        ax = plt.axes(projection='3d')
+        
+        plt.title("Integration Element (Two Triangular Pieces)")
+        ax.set_xlabel("X Axis")
+        ax.set_ylabel("Y Axis")
+        ax.set_zlabel("Z Axis")
+        
+        ax.plot_trisurf(Surface_X, Surface_Y, Surface_Z, color="grey")
+        ax.plot_surface(Ocean_X, Ocean_Y, Ocean_Z, color="blue")
+        ax.plot_surface(E1S1_X, E1S1_Y, E1S1_Z, color="green", alpha=0.5, edgecolor="black")
+        ax.plot_surface(E1S2_X, E1S2_Y, E1S2_Z, color="green", alpha=0.5, edgecolor="black")
+        ax.plot_surface(E2S1_X, E2S1_Y, E2S1_Z, color="green", alpha=0.5, edgecolor="black")
+        ax.plot_surface(E2S2_X, E2S2_Y, E2S2_Z, color="green", alpha=0.5, edgecolor="black")
+        ax.plot_surface(Side_3_X, Side_3_Y, Side_3_Z, color="darkgreen", alpha=0.5, edgecolor="black")
     
     Sorted_Coords_A = sorted([Surface[0], Surface[1], Surface[3]], key=lambda x: x[2])
     Sorted_Coords_B = sorted([Surface[1], Surface[2], Surface[3]], key=lambda x: x[2])
@@ -192,7 +194,7 @@ def view_element(Surface, Height, Tet):
     
         print("Element B volume: " + str(Element_B_Volume))
 
-        if Tet == "-t":
+        if View == "-v" and Tet == "-t":
             
             #Calculate tetrahedrons coordinates
             

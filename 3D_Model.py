@@ -12,8 +12,6 @@ import numpy as np
 from mpl_toolkits import mplot3d
 
 #Variables ==================================================================== 
-  
-
 
 #Main Program =================================================================
 
@@ -120,15 +118,50 @@ ax.set_zlim3d(-150,150)
 ax.plot_surface(Contour_Map_X, Contour_Map_Y, Contour_Map_Z, cmap='Greens', edgecolor="black")
 
 
+def Integrate_Volume(Height):
+    Total = 0
+    #loop through coordinate arrays to get 4, pass them to integration function
+    for Count_Verticle in range(22):
+        for Count_Horizontal in range(12):
+            print("Current surface coordinate: (" + str(Count_Verticle) + "," + str(Count_Horizontal))
+            Coords_1 = [Contour_Map_X[Count_Verticle][Count_Horizontal], Contour_Map_Y[Count_Verticle][Count_Horizontal], Contour_Map_Z[Count_Verticle][Count_Horizontal]]
+            Coords_2 = [Contour_Map_X[Count_Verticle][Count_Horizontal+1], Contour_Map_Y[Count_Verticle][Count_Horizontal+1], Contour_Map_Z[Count_Verticle][Count_Horizontal+1]]
+            Coords_3 = [Contour_Map_X[Count_Verticle+1][Count_Horizontal+1], Contour_Map_Y[Count_Verticle+1][Count_Horizontal+1], Contour_Map_Z[Count_Verticle+1][Count_Horizontal]+1]
+            Coords_4 = [Contour_Map_X[Count_Verticle+1][Count_Horizontal], Contour_Map_Y[Count_Verticle+1][Count_Horizontal], Contour_Map_Z[Count_Verticle+1][Count_Horizontal]]
+            Total += Integrate_Element([Coords_1, Coords_2, Coords_3, Coords_4], Height, "", "")
+
+    print(Total)
+    return Total
+
+def Volume_Vs_Height(Step):
+    
+    Max_Iteration = int(13/Step)
+    Heights = [0]
+    Volumes = [0]
+    
+    for Iteration in range(Max_Iteration):
+        Volumes.append(Integrate_Volume(Heights[Iteration]))
+        Heights.append(Heights[Iteration]+Step)
+
+    fig = plt.figure(figsize=plt.figaspect(1)*2)
+    ax = plt.axes()
+    plt.title("Volume vs Ocean Height of Lagoon")
+    ax.set_xlabel("Height (m)")
+    ax.set_ylabel("Volume (m^3")
+    ax.plot(Heights, Volumes)
+    ax.plot([0,13], [0, 18465417])
+    
+    return [Heights, Volumes]
 
 
-
-
-
-
-
-
-
+def test():
+    
+    fig = plt.figure(figsize=plt.figaspect(1)*2)
+    ax = plt.axes() #proj_type = 'ortho'
+    plt.title("Volume vs Ocean Height of Lagoon")
+    ax.set_xlabel("Height (m)")
+    ax.set_ylabel("Volume (m^3")
+    ax.plot([0,1,2,3],[5,10,15,20])
 
 
 
