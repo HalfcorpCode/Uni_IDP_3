@@ -110,7 +110,7 @@ ax.set_zlabel("Z Axis")
 
 ax.set_xlim3d(-1500,1500)
 ax.set_ylim3d(-1500,1500)
-ax.set_zlim3d(-150,150)
+ax.set_zlim3d(-1500,1500)
 
 #plt.axis('scaled')
 
@@ -135,7 +135,7 @@ def Integrate_Volume(Height):
 
 def Volume_Vs_Height(Step):
     
-    Max_Iteration = int(13/Step)
+    Max_Iteration = int(13/Step)+1
     Heights = [0]
     Volumes = [0]
     
@@ -147,9 +147,9 @@ def Volume_Vs_Height(Step):
     ax = plt.axes()
     plt.title("Volume vs Ocean Height of Lagoon")
     ax.set_xlabel("Height (m)")
-    ax.set_ylabel("Volume (m^3")
+    ax.set_ylabel("Volume (m^3)")
     ax.plot(Heights, Volumes)
-    ax.plot([0,13], [0, 18465417])
+    #ax.plot([0,13], [0, 18465417])
     
     return [Heights, Volumes]
 
@@ -160,8 +160,14 @@ def test():
     ax = plt.axes() #proj_type = 'ortho'
     plt.title("Volume vs Ocean Height of Lagoon")
     ax.set_xlabel("Height (m)")
-    ax.set_ylabel("Volume (m^3")
-    ax.plot([0,1,2,3],[5,10,15,20])
+    ax.set_ylabel(r'Volume ($m^3$)')
+    ax.plot(Heights, Volumes)
+    plt.minorticks_on()
+    ax.grid(which='major', color='black', linestyle='-', linewidth=1)
+    ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
+    #ax.plot([0,13], [0, 18465417])
+    
+#[Heights, Volumes] = Volume_Vs_Height(0.1)
 
 
 
