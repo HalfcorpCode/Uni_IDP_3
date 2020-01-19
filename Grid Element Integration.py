@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 #from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits import mplot3d
+import logging
 
 #Variables ==================================================================== 
   
@@ -30,8 +31,17 @@ Side 3 - Element 1 & 2 boundary, surface plot comnputed from Ocean and Surface
 Boundary exists between coordinate 2 and 4 
 """
 
-def Integrate_Element(Surface, Height, View, Tet):
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+log = logging.getLogger()
+
+def Integrate_Element(Surface, Height, View, Tet, Log):
     
+    if Log == True:
+        log.setLevel(logging.INFO)
+    else:
+        log.setLevel(logging.WARNING)
+    
+    log.info('Starting element integration')
     #Calculate surface coordinates
     
     Surface_X = np.array([Surface[0][0], Surface[1][0], Surface[2][0], Surface[3][0]])
@@ -42,7 +52,7 @@ def Integrate_Element(Surface, Height, View, Tet):
     Ocean_Y = np.array([[Surface[0][1], Surface[1][1]], [Surface[3][1], Surface[2][1]]])
     Ocean_Z = np.array([[Height, Height], [Height, Height]])
     
-    if View == "-v":
+    if View == True:
     
         E1S1_X = np.array([[Surface[0][0], Surface[1][0]], [Surface[0][0], Surface[1][0]]])
         E1S1_Y = np.array([[Surface[0][1], Surface[1][1]], [Surface[0][1], Surface[1][1]]])
@@ -102,7 +112,7 @@ def Integrate_Element(Surface, Height, View, Tet):
     if Surface[3][2] > Height:
         Coords_Above_B += 1  
         
-    print("Coords above A: " + str(Coords_Above_A) + " Coords above B: " + str(Coords_Above_B))
+    log.info("Coords above A: " + str(Coords_Above_A) + " Coords above B: " + str(Coords_Above_B))
     
     if Coords_Above_A+Coords_Above_B == 6:
         
@@ -124,77 +134,77 @@ def Integrate_Element(Surface, Height, View, Tet):
                                                [Surface[2][0],Surface[2][1],Height],
                                                [Surface[3][0],Surface[3][1],Height]])
     
-        print("Triangle ocean area A: " + str(Triangle_Area_Ocean_A) + " Triangle ocean area B: " + str(Triangle_Area_Ocean_B))
+        log.info("Triangle ocean area A: " + str(Triangle_Area_Ocean_A) + " Triangle ocean area B: " + str(Triangle_Area_Ocean_B))
     
         #Element A
     
         if Coords_Above_A == 3:
         
-            print("3 coords above element A, volume is 0")
+            log.info("3 coords above element A, volume is 0")
             Element_A_Volume = 0
             
         elif Coords_Above_A == 0:    
             
-            print("0 coords above element A")
+            log.info("0 coords above element A")
             Delta_Height = Height - Sorted_Coords_A[2][2]   #Difference between ocean height and height of highest coordinate
             Element_A_Volume = (Delta_Height*Triangle_Area_Ocean_A) + Tetra_Volume(Tetrahedron_A_1_Coords) + Tetra_Volume(Tetrahedron_A_2_Coords)
-            print("Triangle area: " + str(Triangle_Area_Ocean_A) + " Delta height: " + str(Delta_Height) + " Tetra 1:  " + str(Tetra_Volume(Tetrahedron_A_1_Coords)) + " Tetra 2: " + str(Tetra_Volume(Tetrahedron_A_2_Coords)))
+            log.info("Triangle area: " + str(Triangle_Area_Ocean_A) + " Delta height: " + str(Delta_Height) + " Tetra 1:  " + str(Tetra_Volume(Tetrahedron_A_1_Coords)) + " Tetra 2: " + str(Tetra_Volume(Tetrahedron_A_2_Coords)))
         
         elif Coords_Above_A == 1:
             
-            print("1 coord above element A")
+            log.info("1 coord above element A")
             Subtract_Prism = Triangle_Area_Ocean_A*(Sorted_Coords_A[2][2]-Height) 
             High_Middle_Intersection = Line_Intersect([Sorted_Coords_A[2], Sorted_Coords_A[1], [Sorted_Coords_A[2][0],Sorted_Coords_A[2][1], Height], [Sorted_Coords_A[1][0],Sorted_Coords_A[1][1], Height]])    #Highest point to middle point, ocean below highest point to ocean above middle point
             High_Low_Intersection = Line_Intersect([Sorted_Coords_A[2], Sorted_Coords_A[0], [Sorted_Coords_A[2][0],Sorted_Coords_A[2][1], Height], [Sorted_Coords_A[0][0],Sorted_Coords_A[0][1], Height]])    #Highest point to low point, ocean below highest point to ocean above low point
             Extra_Tetra_Coords = [Sorted_Coords_A[2], [Sorted_Coords_A[2][0],Sorted_Coords_A[2][1], Height], High_Middle_Intersection, High_Low_Intersection]  #Highest sea floor, highest sea floor at ocean height, line between highest and middle sea floor, line between highest and lowest sea floor.
             Element_A_Volume = Tetra_Volume(Tetrahedron_A_1_Coords) + Tetra_Volume(Tetrahedron_A_2_Coords) - Subtract_Prism + Tetra_Volume(Extra_Tetra_Coords)
-            print("Both tetra volumes: " + str(Tetra_Volume(Tetrahedron_A_1_Coords) + Tetra_Volume(Tetrahedron_A_2_Coords)) + " Prism (to subtract) " + str(Subtract_Prism) + " Extra tetra volume (to add): " + str(Tetra_Volume(Extra_Tetra_Coords)))
+            log.info("Both tetra volumes: " + str(Tetra_Volume(Tetrahedron_A_1_Coords) + Tetra_Volume(Tetrahedron_A_2_Coords)) + " Prism (to subtract) " + str(Subtract_Prism) + " Extra tetra volume (to add): " + str(Tetra_Volume(Extra_Tetra_Coords)))
         
         elif Coords_Above_A == 2:
             
-            print("2 coord above elements A")
+            log.info("2 coord above elements A")
             Low_Middle_Intersection = Line_Intersect([Sorted_Coords_A[0], Sorted_Coords_A[1], [Sorted_Coords_A[0][0], Sorted_Coords_A[0][1], Height], [Sorted_Coords_A[1][0], Sorted_Coords_A[1][1], Height]]) #Low sea floor, middle sea floor, low sea floor at height, middle sea floor at height
             Low_High_Intersection = Line_Intersect([Sorted_Coords_A[0], Sorted_Coords_A[2], [Sorted_Coords_A[0][0], Sorted_Coords_A[0][1], Height], [Sorted_Coords_A[2][0], Sorted_Coords_A[2][1], Height]]) #Low sea floor, high sea floor, low sea floor at height, high sea floor at height
             Element_A_Volume = Tetra_Volume([Sorted_Coords_A[0], [Sorted_Coords_A[0][0], Sorted_Coords_A[0][1], Height], Low_Middle_Intersection, Low_High_Intersection])
-            print("Only tetra volume: " + str(Element_A_Volume))
+            log.info("Only tetra volume: " + str(Element_A_Volume))
         
-        print("Element A volume: " + str(Element_A_Volume))
+        log.info("Element A volume: " + str(Element_A_Volume))
         
         #Element B
         
         if Coords_Above_B == 3:
         
-            print("3 coords above element B, volume is 0")
+            log.info("3 coords above element B, volume is 0")
             Element_B_Volume = 0
             
         elif Coords_Above_B == 0:    
             
-            print("0 coords above element B")
+            log.info("0 coords above element B")
             Delta_Height = Height - Sorted_Coords_B[2][2]   #Difference between ocean height and height of highest coordinate
             Element_B_Volume = (Delta_Height*Triangle_Area_Ocean_B) + Tetra_Volume(Tetrahedron_B_1_Coords) + Tetra_Volume(Tetrahedron_B_2_Coords)
-            print("Triangle area: " + str(Triangle_Area_Ocean_B) + " Delta height: " + str(Delta_Height) + " Tetra 1:  " + str(Tetra_Volume(Tetrahedron_B_1_Coords)) + " Tetra 2: " + str(Tetra_Volume(Tetrahedron_B_2_Coords)))
+            log.info("Triangle area: " + str(Triangle_Area_Ocean_B) + " Delta height: " + str(Delta_Height) + " Tetra 1:  " + str(Tetra_Volume(Tetrahedron_B_1_Coords)) + " Tetra 2: " + str(Tetra_Volume(Tetrahedron_B_2_Coords)))
         
         elif Coords_Above_B == 1:
             
-            print("1 coord above element B")
+            log.info("1 coord above element B")
             Subtract_Prism = Triangle_Area_Ocean_B*(Sorted_Coords_B[2][2]-Height) 
             High_Middle_Intersection = Line_Intersect([Sorted_Coords_B[2], Sorted_Coords_B[1], [Sorted_Coords_B[2][0],Sorted_Coords_B[2][1], Height], [Sorted_Coords_B[1][0],Sorted_Coords_B[1][1], Height]])    #Highest point to middle point, ocean below highest point to ocean above middle point
             High_Low_Intersection = Line_Intersect([Sorted_Coords_B[2], Sorted_Coords_B[0], [Sorted_Coords_B[2][0],Sorted_Coords_B[2][1], Height], [Sorted_Coords_B[0][0],Sorted_Coords_B[0][1], Height]])    #Highest point to low point, ocean below highest point to ocean above low point
             Extra_Tetra_Coords = [Sorted_Coords_B[2], [Sorted_Coords_B[2][0],Sorted_Coords_B[2][1], Height], High_Middle_Intersection, High_Low_Intersection]  #Highest sea floor, highest sea floor at ocean height, line between highest and middle sea floor, line between highest and lowest sea floor.
             Element_B_Volume = Tetra_Volume(Tetrahedron_B_1_Coords) + Tetra_Volume(Tetrahedron_B_2_Coords) - Subtract_Prism + Tetra_Volume(Extra_Tetra_Coords)
-            print("Both tetra volumes: " + str(Tetra_Volume(Tetrahedron_B_1_Coords) + Tetra_Volume(Tetrahedron_B_2_Coords)) + " Prism (to subtract) " + str(Subtract_Prism) + " Extra tetra volume (to add): " + str(Tetra_Volume(Extra_Tetra_Coords)))
+            log.info("Both tetra volumes: " + str(Tetra_Volume(Tetrahedron_B_1_Coords) + Tetra_Volume(Tetrahedron_B_2_Coords)) + " Prism (to subtract) " + str(Subtract_Prism) + " Extra tetra volume (to add): " + str(Tetra_Volume(Extra_Tetra_Coords)))
         
         elif Coords_Above_B == 2:
             
-            print("2 coord above elements B")
+            log.info("2 coord above elements B")
             Low_Middle_Intersection = Line_Intersect([Sorted_Coords_B[0], Sorted_Coords_B[1], [Sorted_Coords_B[0][0], Sorted_Coords_B[0][1], Height], [Sorted_Coords_B[1][0], Sorted_Coords_B[1][1], Height]]) #Low sea floor, middle sea floor, low sea floor at height, middle sea floor at height
             Low_High_Intersection = Line_Intersect([Sorted_Coords_B[0], Sorted_Coords_B[2], [Sorted_Coords_B[0][0], Sorted_Coords_B[0][1], Height], [Sorted_Coords_B[2][0], Sorted_Coords_B[2][1], Height]]) #Low sea floor, high sea floor, low sea floor at height, high sea floor at height
             Element_B_Volume = Tetra_Volume([Sorted_Coords_B[0], [Sorted_Coords_B[0][0], Sorted_Coords_B[0][1], Height], Low_Middle_Intersection, Low_High_Intersection])
-            print("Only tetra volume: " + str(Element_B_Volume))
+            log.info("Only tetra volume: " + str(Element_B_Volume))
     
-        print("Element B volume: " + str(Element_B_Volume))
+        log.info("Element B volume: " + str(Element_B_Volume))
 
-        if View == "-v" and Tet == "-t":
+        if View == True and Tet == True:
             
             #Calculate tetrahedrons coordinates
             
