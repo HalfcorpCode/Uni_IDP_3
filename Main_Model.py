@@ -22,12 +22,12 @@ from mpl_toolkits.mplot3d import Axes3D
   
 #Main Program =================================================================
 
-def Drain_Test():
+def Run_Simulation():
    
     M = 1453217
     G = 9.81
     V_0 = 18891820
-    Area = 44*5
+    Area = 40*20
     Time = [0]
     Time[0] = 0
     Volume = [0]
@@ -43,8 +43,8 @@ def Drain_Test():
     plt.figure(figsize=plt.figaspect(1)*2)
     ax = plt.axes() #proj_type = 'ortho'
     plt.title("Volume Vs Time")
-    ax.set_xlabel("Volume")
-    ax.set_ylabel("Time")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Volume (m^3)")
     ax.plot(Time, Volume)
     plt.minorticks_on()
     ax.grid(which='major', color='black', linestyle='-', linewidth=1)

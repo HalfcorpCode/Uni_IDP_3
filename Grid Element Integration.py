@@ -22,11 +22,11 @@ Components:
     
 Surface - Triangular plot of 4 coords
 Ocean - Surface plot (flat grid) computed from height input and Surface
-Element 1 Side 1 (E1S1) - First side of first element, surface plot comnputed from Ocean and Surface
-Element 1 Side 2 (E1S2) - Second side of first element, surface plot comnputed from Ocean and Surface
-Element 2 Side 1 (E2S1) - First side of second element, surface plot comnputed from Ocean and Surface 
-Element 2 Side 2 (E2S2) - Second side of second element, surface plot comnputed from Ocean and Surface    
-Side 3 - Element 1 & 2 boundary, surface plot comnputed from Ocean and Surface
+Element 1 Side 1 (E1S1) - First side of first element, surface plot computed from Ocean and Surface
+Element 1 Side 2 (E1S2) - Second side of first element, surface plot computed from Ocean and Surface
+Element 2 Side 1 (E2S1) - First side of second element, surface plot computed from Ocean and Surface 
+Element 2 Side 2 (E2S2) - Second side of second element, surface plot computed from Ocean and Surface    
+Side 3 - Element 1 & 2 boundary, surface plot computed from Ocean and Surface
 
 Boundary exists between coordinate 2 and 4 
 """
