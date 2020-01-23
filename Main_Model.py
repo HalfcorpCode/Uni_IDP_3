@@ -27,7 +27,7 @@ def Run_Simulation():
     M = 1453217
     G = 9.81
     V_0 = 18891820
-    Area = 40*20
+    Area = 40*5
     Time = [0]
     Time[0] = 0
     Volume = [0]
@@ -38,7 +38,8 @@ def Run_Simulation():
     
     for i in range(21600):
         Time.append(i)
-        Volume.append(M*np.power(( (np.sqrt((V_0)/(M)+5)) - ((Area*i*np.sqrt(2*G))/(2*M)) ), 2)-5*M)
+        Volume.append(np.power(np.sqrt(V_0)-0.5*Area*i*np.sqrt((2*G)/(M)),2))
+        #Volume.append(M*np.power(( (np.sqrt((V_0)/(M)+5)) - ((Area*i*np.sqrt(2*G))/(2*M)) ), 2)-5*M)
         
     plt.figure(figsize=plt.figaspect(1)*2)
     ax = plt.axes() #proj_type = 'ortho'
