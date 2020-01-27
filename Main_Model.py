@@ -17,12 +17,14 @@ import math as m
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
+import datetime
 
 #Variables ==================================================================== 
   
 
 #Main Program =================================================================
 
+'''Add in function that allows the used to setup operational mode profile objects that are used by the simulation function'''
     
 def Run_Simulation(**kwargs):
 
@@ -41,6 +43,8 @@ def Run_Simulation(**kwargs):
     
     ###################
     
+    #Local Variables
+    
     V_0 = 18891820
     Euler_Volume = [0]
     Euler_Volume_Tide = [0]
@@ -49,16 +53,36 @@ def Run_Simulation(**kwargs):
     Time = [0]
     M = 1453217
     G = 9.807
+    Tidal_Function = 0
+    Discharge_Coefficient= 0.65
+    
+    #Initial Calculations
     
     Area = np.pi*np.power((Turbine_Diameter/2),2)*Turbines
+    Pipe_Loss = 0.5
+    Turbine_Loss = 0
+    
+    '''
+    Read operational algorithm profile, then switch between 5 different states, checking stopping conditions each time. Put Euler approximation in different function
+    Operational states:
+        -Filling_Sluice
+        -Filling_Generation
+        -Draining_Sluice
+        -Draining_Generation
+        -Transition (waiting)
+    Save data to global arrays
+    Plot graph using given parameters
+    If value in square root turns negative, return an error. (This should only happen if sluice gates are not shut at the right time, it means the tide is higher than the lagoon)
+    '''
         
-    for i in range(30000):
+    for i in range(40000):
         
         Time.append(i)
         Euler_Volume.append(Euler_Volume[i]-Step_Size*Area*np.sqrt((2*G*Euler_Volume[i])/(M)))
-        Euler_Volume_Tide.append(Euler_Volume_Tide[i]-Step_Size*Area*np.sqrt(2*G)*np.sqrt((np.abs(Euler_Volume_Tide[i]))/(M)-(2*np.sin(2*np.pi*0.0000463*i+1)+5)))
+        #Tidal_Function = 2*np.sin(2*np.pi*0.0000463*i+1)+5
+        Tidal_Function = 6*np.cos(2*np.pi*0.0000231*i-np.pi)+6
+        Euler_Volume_Tide.append(Euler_Volume_Tide[i]-Step_Size*Area*Discharge_Coefficient*np.sqrt(2*G)*np.sqrt((Euler_Volume_Tide[i])/(M)-(Tidal_Function)-Turbine_Loss-Pipe_Loss))
             
-    #print(Euler_Volume_Tide)
     
     plt.figure(figsize=plt.figaspect(1)*2)
     ax = plt.axes() #proj_type = 'ortho'
@@ -96,10 +120,32 @@ def Heads_Graph():          #Shows a graph of lagoon height and tidal height aga
     Time.append(Time[len(Time)-1]+1)
     ax.plot(Time, Tide_Heights)
     plt.minorticks_on()
+    
     ax.grid(which='major', color='black', linestyle='-', linewidth=1)
     ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
    
+def Tidal_Function_Testing(Interval=86400):     #Shows a graph of a desired tidal function hardcoded in. The time interval is taken as the parameter.
      
+    xlim = np.arange(0, 60* 60 *26, 60*60*2)
+    Time = [0]
+    Tide_Height = [0]
+    
+    for i in range(Interval):
+        
+        Time.append(i)
+        Tide_Height.append(6*np.cos(2*np.pi*0.0000231*i-np.pi)+6)
+    
+    plt.figure(figsize=plt.figaspect(1)*2)
+    ax = plt.axes() #proj_type = 'ortho'
+    plt.title("Ideal Semidiurnal Tide Over 24 Hours")
+    ax.set_xlabel("Time (H)")
+    ax.set_ylabel("Head (m)")
+    ax.plot(Time, Tide_Height)
+    plt.minorticks_on()
+    plt.xticks(xlim, [str(n).zfill(2) + ':00' for n in np.arange(0, 26,2)])
+    ax.grid(which='major', color='black', linestyle='-', linewidth=1)
+    ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
+    
 def Analyitic_Simulation_Simple(Duration=21600):        #Calculates the volume and graphs it over a time parameter analyitically.
    
     M = 1453217
