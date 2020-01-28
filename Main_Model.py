@@ -20,7 +20,9 @@ from mpl_toolkits.mplot3d import Axes3D
 import datetime
 
 #Variables ==================================================================== 
-  
+
+Global_Time = [0]
+Volume_Time = [0]   
 
 #Main Program =================================================================
 
@@ -55,6 +57,8 @@ def Run_Simulation(**kwargs):
     G = 9.807
     Tidal_Function = 0
     Discharge_Coefficient= 0.65
+    State = 0                   #0 = Waiting, 1 = filling sluice, 2 = draining generation, 3 = filling generation, 4 = draining sluice
+    Current_Time = 0
     
     #Initial Calculations
     
@@ -74,7 +78,49 @@ def Run_Simulation(**kwargs):
     Plot graph using given parameters
     If value in square root turns negative, return an error. (This should only happen if sluice gates are not shut at the right time, it means the tide is higher than the lagoon)
     '''
+    
+    #State = operational profile.startstate
+    State = 0
+    
+    while Current_Time < Run_Time:
         
+        if State == 0:
+            
+            print("In state 0: Waiting for tidal shift")
+            #Check exit condition
+            #Break or increment tide
+            
+        if State == 1:
+            
+            print("In state 1: Filling lagoon via sluicing")
+            #Check exit condition
+            #Break or increment tide and update lagoon volume
+            #NEED EQUATION FOR THIS
+        
+        if State == 2:
+            
+            print("In state 2: Draining lagoon via energy generation")
+            #Check exit condition
+            #Break or increment tide and update lagoon volume
+            
+        if State == 3:
+            
+            print("In state 3: Filling lagoon via energy generation")
+            #Check exit condition
+            #Break or increment tide and update lagoon volume
+            #NEED EQUATION FOR THIS
+            
+        if State == 4:
+            
+            print("In state 4: Draining lagoon via sluicing")
+            #Check exit condition
+            #Break or increment tide and update lagoon volume
+            #NEED EQUATION FOR THIS
+            
+    
+    
+        
+    
     for i in range(40000):
         
         Time.append(i)
