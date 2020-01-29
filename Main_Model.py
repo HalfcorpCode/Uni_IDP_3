@@ -22,7 +22,9 @@ import datetime
 #Variables ==================================================================== 
 
 Global_Time = [0]
-Volume_Time = [0]   
+Global_Volume = [0]  
+Global_Tide = [0]
+Global_Head = [0] 
 
 #Main Program =================================================================
 
@@ -43,7 +45,19 @@ def Run_Simulation(**kwargs):
     
     #Economic Parameters
     
+    #Fixed costs - Start up costs, running costs, etc
+    #Variable costs
+    #Take into account maintencance downtimes
+    
     ###################
+    
+    #Global Variables
+    
+    global Global_Time, Global_Volume, Global_Tide, Global_Head
+    Global_Time = [0]
+    Global_Volume = [0]  
+    Global_Tide = [0]
+    Global_Head = [0]
     
     #Local Variables
     
@@ -57,13 +71,15 @@ def Run_Simulation(**kwargs):
     G = 9.807
     Tidal_Function = 0
     Discharge_Coefficient= 0.65
+    Sluicing_Discharge_Coefficient = 0.95
     State = 0                   #0 = Waiting, 1 = filling sluice, 2 = draining generation, 3 = filling generation, 4 = draining sluice
-    Current_Time = 0
+    Current_Time = 1
     
     #Initial Calculations
     
     Area = np.pi*np.power((Turbine_Diameter/2),2)*Turbines
-    Pipe_Loss = 0.5
+    Sluice_Area =  (np.pi*np.power((Turbine_Diameter/2),2)*Turbines)+(Sluice_Size*Sluices)
+    Pipe_Loss = 0.0
     Turbine_Loss = 0
     
     '''
@@ -80,26 +96,73 @@ def Run_Simulation(**kwargs):
     '''
     
     #State = operational profile.startstate
-    State = 0
+    State = Operation_Mode
     
     while Current_Time < Run_Time:
         
         if State == 0:
             
             print("In state 0: Waiting for tidal shift")
-            #Check exit condition
-            #Break or increment tide
+            
+            while State == 0:
+                
+                if Global_Tide[Current_Time-1] < 5: 
+                    State = 2
+                elif Current_Time > Run_Time:
+                    State = 5
+                    print("times up")
+                else:
+                
+                    Global_Time.append(Current_Time)
+                    Global_Tide.append(6*np.cos(2*np.pi*0.0000231*Current_Time-np.pi)+6)
+                    Global_Volume.append(Global_Volume[-1])
+                    Global_Head.append((Global_Volume[-1])/(M))
+                    Current_Time += 1
+                #Check exit condition
+                #Break or increment tide
             
         if State == 1:
             
             print("In state 1: Filling lagoon via sluicing")
-            #Check exit condition
-            #Break or increment tide and update lagoon volume
-            #NEED EQUATION FOR THIS
+            
+            while State == 1:
+                
+                if Global_Head[Current_Time-1] > 10: 
+                    State = 0
+                elif Current_Time > Run_Time:
+                    State = 5
+                    print("times up")
+                else:
+                
+                    Global_Time.append(Current_Time)
+                    Global_Tide.append(6*np.cos(2*np.pi*0.0000231*Current_Time-np.pi)+6)
+                    #Global_Volume.append(Global_Volume[Current_Time-1]+Step_Size*Sluice_Area*Sluicing_Discharge_Coefficient*np.sqrt(2*G)*np.sqrt(Global_Tide[Current_Time]-((Global_Volume[Current_Time-1])/(M))-Pipe_Loss))
+                    Global_Volume.append(Global_Volume[Current_Time-1]+Step_Size*Sluice_Area*Sluicing_Discharge_Coefficient*np.sqrt(2*G)*np.sqrt((Global_Tide[Current_Time])-((Global_Volume[Current_Time-1])/(M))-Pipe_Loss))
+                    Global_Head.append((Global_Volume[Current_Time])/(M))
+                    Current_Time += 1
+                #Check exit condition
+                #Break or increment tide and update lagoon volume
+                #NEED EQUATION FOR THIS
         
         if State == 2:
             
             print("In state 2: Draining lagoon via energy generation")
+            
+            while State == 2:
+                
+                if Global_Head[Current_Time-1] < 1: 
+                    State = 0
+                    Current_Time = Run_Time+1
+                elif Current_Time > Run_Time:
+                    State = 5
+                    print("times up")
+                else:
+                    
+                    Global_Time.append(Current_Time)
+                    Global_Tide.append(6*np.cos(2*np.pi*0.0000231*Current_Time-np.pi)+6)
+                    Global_Volume.append(Global_Volume[Current_Time-1]-Step_Size*Area*Discharge_Coefficient*np.sqrt(2*G)*np.sqrt((Global_Volume[Current_Time-1])/(M)-(Global_Tide[Current_Time])-Turbine_Loss-Pipe_Loss))
+                    Global_Head.append((Global_Volume[Current_Time])/(M))
+                    Current_Time += 1
             #Check exit condition
             #Break or increment tide and update lagoon volume
             
@@ -118,26 +181,35 @@ def Run_Simulation(**kwargs):
             #NEED EQUATION FOR THIS
             
     
-    
-        
-    
-    for i in range(40000):
-        
-        Time.append(i)
-        Euler_Volume.append(Euler_Volume[i]-Step_Size*Area*np.sqrt((2*G*Euler_Volume[i])/(M)))
-        #Tidal_Function = 2*np.sin(2*np.pi*0.0000463*i+1)+5
-        Tidal_Function = 6*np.cos(2*np.pi*0.0000231*i-np.pi)+6
-        Euler_Volume_Tide.append(Euler_Volume_Tide[i]-Step_Size*Area*Discharge_Coefficient*np.sqrt(2*G)*np.sqrt((Euler_Volume_Tide[i])/(M)-(Tidal_Function)-Turbine_Loss-Pipe_Loss))
-            
+#    for i in range(40000):
+#        
+#        Time.append(i)
+#        Euler_Volume.append(Euler_Volume[i]-Step_Size*Area*np.sqrt((2*G*Euler_Volume[i])/(M)))
+#        #Tidal_Function = 2*np.sin(2*np.pi*0.0000463*i+1)+5
+#        #Tidal_Function = 6*np.cos(2*np.pi*0.0000231*i-np.pi)+6
+#        Tidal_Function = 0
+#        Euler_Volume_Tide.append(Euler_Volume_Tide[i]-Step_Size*Area*Discharge_Coefficient*np.sqrt(2*G)*np.sqrt((Euler_Volume_Tide[i])/(M)-(Tidal_Function)-Turbine_Loss-Pipe_Loss))
+#            
     
     plt.figure(figsize=plt.figaspect(1)*2)
-    ax = plt.axes() #proj_type = 'ortho'
+    
+    ax = plt.axes()
+    second_ax = ax.twinx()
     plt.title("Forward Euler")
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Volume (m^3)")
-    ax.plot(Time, Euler_Volume)
-    ax.plot(Time, Euler_Volume_Tide)
-    ax.legend(["No tide", "With tide"])
+    second_ax.set_ylabel('Head (m)')
+   
+    No_Tide_Plot = ax.plot(Time, Euler_Volume, label="No tide")
+    With_Tide_Plot = ax.plot(Time, Euler_Volume_Tide, label="With tide")
+    Filling_Plot = ax.plot(Global_Time, Global_Volume, label="Lagoon Volume", color="deepskyblue", linewidth=2)
+    Lagoon_Head_Plot = second_ax.plot(Global_Time, Global_Head, "--", label="Lagoon head", color="green")
+    Tide_Height_Plot = second_ax.plot(Global_Time, Global_Tide, "--", label="Tide height", color ="blue")
+    
+    Lines = No_Tide_Plot+With_Tide_Plot+Filling_Plot+Lagoon_Head_Plot+Tide_Height_Plot
+    Labels =[l.get_label() for l in Lines]
+    ax.legend(Lines, Labels)
+    
     plt.minorticks_on()
     ax.grid(which='major', color='black', linestyle='-', linewidth=1)
     ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
