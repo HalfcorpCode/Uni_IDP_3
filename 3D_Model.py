@@ -123,8 +123,8 @@ def Surface_Plot():
 def Integrate_Volume(Height):
     
     Total = 0
-    for Count_Verticle in range(22):
-        for Count_Horizontal in range(12):
+    for Count_Verticle in range(22):                #22 or 19 for just bay
+        for Count_Horizontal in range(12):          #12 or 10 for just bay
             log.info("Current surface coordinate: (" + str(Count_Verticle) + "," + str(Count_Horizontal))
             Coords_1 = [Contour_Map_X[Count_Verticle][Count_Horizontal], Contour_Map_Y[Count_Verticle][Count_Horizontal], Contour_Map_Z[Count_Verticle][Count_Horizontal]]
             Coords_2 = [Contour_Map_X[Count_Verticle][Count_Horizontal+1], Contour_Map_Y[Count_Verticle][Count_Horizontal+1], Contour_Map_Z[Count_Verticle][Count_Horizontal+1]]
@@ -152,7 +152,7 @@ def Volume_Vs_Height(Step):
     return [Heights, Volumes]
 
 
-def Plot_Volume_Height():
+def Plot_Volume_Height(approx=False):
     
     fig = plt.figure(figsize=plt.figaspect(1)*2)
     ax = plt.axes() #proj_type = 'ortho'
@@ -163,11 +163,11 @@ def Plot_Volume_Height():
     plt.minorticks_on()
     ax.grid(which='major', color='black', linestyle='-', linewidth=1)
     ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
-    ax.plot([0,13],[0,18891820])
-    #ax.plot([0,13], [0, 18465417])
     
-#[Heights, Volumes] = Volume_Vs_Height(1)
+    if approx == True:
+        ax.plot([0,13], [0, 18891820])
 
+    
 def Integrate_Element(Surface, Height, View, Tet, Log):
     
     if Log == True:

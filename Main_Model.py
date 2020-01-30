@@ -25,6 +25,7 @@ Global_Time = [0]
 Global_Volume = [0]  
 Global_Tide = [0]
 Global_Head = [0] 
+Profile_List = []
 
 #Main Program =================================================================
 
@@ -40,7 +41,7 @@ def Run_Simulation(**kwargs):
     Sluices = kwargs["slucies"]
     Sluice_Size = kwargs["sluice_size"]
     
-    Operation_Mode = kwargs["mode"]
+    Profile_Number = kwargs["profile"]
     Run_Time = kwargs["time"]
     
     #Economic Parameters
@@ -74,7 +75,9 @@ def Run_Simulation(**kwargs):
     Sluicing_Discharge_Coefficient = 0.95
     State = 0                   #0 = Waiting, 1 = filling sluice, 2 = draining generation, 3 = filling generation, 4 = draining sluice
     Current_Time = 1
-    
+    Operational_Profile = Profile_List[Profile_Number-1]
+    Profile_Stage = 0
+    Total_Stages = len(Operational_Profile)
     #Initial Calculations
     
     Area = np.pi*np.power((Turbine_Diameter/2),2)*Turbines
@@ -96,7 +99,7 @@ def Run_Simulation(**kwargs):
     '''
     
     #State = operational profile.startstate
-    State = Operation_Mode
+    State = Operational_Profile[0][0]
     
     while Current_Time < Run_Time:
         
@@ -106,20 +109,18 @@ def Run_Simulation(**kwargs):
             
             while State == 0:
                 
-                if Global_Tide[Current_Time-1] < 5: 
-                    State = 2
-                elif Current_Time > Run_Time:
+                if Current_Time > Run_Time:
                     State = 5
-                    print("times up")
+                    print("Runtime elapsed")
+                elif Global_Tide[Current_Time-1] < Operational_Profile[Profile_Stage][1]: 
+                    Profile_Stage = (Profile_Stage+1)%Total_Stages
+                    State = Operational_Profile[Profile_Stage][0]
                 else:
-                
                     Global_Time.append(Current_Time)
                     Global_Tide.append(6*np.cos(2*np.pi*0.0000231*Current_Time-np.pi)+6)
                     Global_Volume.append(Global_Volume[-1])
                     Global_Head.append((Global_Volume[-1])/(M))
                     Current_Time += 1
-                #Check exit condition
-                #Break or increment tide
             
         if State == 1:
             
@@ -127,22 +128,29 @@ def Run_Simulation(**kwargs):
             
             while State == 1:
                 
-                if Global_Head[Current_Time-1] > 10: 
-                    State = 0
-                elif Current_Time > Run_Time:
+                if Current_Time > Run_Time:
                     State = 5
-                    print("times up")
+                    print("Runtime elapsed")
+                elif Global_Head[Current_Time-1] > Operational_Profile[Profile_Stage][1]:
+                    Profile_Stage = (Profile_Stage+1)%Total_Stages
+                    State = Operational_Profile[Profile_Stage][0]  
                 else:
                 
                     Global_Time.append(Current_Time)
                     Global_Tide.append(6*np.cos(2*np.pi*0.0000231*Current_Time-np.pi)+6)
                     #Global_Volume.append(Global_Volume[Current_Time-1]+Step_Size*Sluice_Area*Sluicing_Discharge_Coefficient*np.sqrt(2*G)*np.sqrt(Global_Tide[Current_Time]-((Global_Volume[Current_Time-1])/(M))-Pipe_Loss))
-                    Global_Volume.append(Global_Volume[Current_Time-1]+Step_Size*Sluice_Area*Sluicing_Discharge_Coefficient*np.sqrt(2*G)*np.sqrt((Global_Tide[Current_Time])-((Global_Volume[Current_Time-1])/(M))-Pipe_Loss))
+                    
+                    if (Global_Tide[Current_Time])-((Global_Volume[Current_Time-1])/(M)) < 0:
+                        print("WARNING: Target value of " + str(Operational_Profile[Profile_Stage][1]) + "m in state 1 could not be met!")
+                        Global_Volume.append(Global_Volume[-1])
+                        Profile_Stage = (Profile_Stage+1)%Total_Stages
+                        State = Operational_Profile[Profile_Stage][0]
+                    else:    
+                        Global_Volume.append(Global_Volume[Current_Time-1]+Step_Size*Sluice_Area*Sluicing_Discharge_Coefficient*np.sqrt(2*G)*np.sqrt((Global_Tide[Current_Time])-((Global_Volume[Current_Time-1])/(M))-Pipe_Loss))
+                    
                     Global_Head.append((Global_Volume[Current_Time])/(M))
                     Current_Time += 1
-                #Check exit condition
-                #Break or increment tide and update lagoon volume
-                #NEED EQUATION FOR THIS
+                    #print("the time is: " + str(Current_Time))
         
         if State == 2:
             
@@ -150,21 +158,28 @@ def Run_Simulation(**kwargs):
             
             while State == 2:
                 
-                if Global_Head[Current_Time-1] < 1: 
-                    State = 0
-                    Current_Time = Run_Time+1
-                elif Current_Time > Run_Time:
+                if Current_Time > Run_Time:
                     State = 5
-                    print("times up")
+                    print("Runtime elapsed")
+                elif Global_Head[Current_Time-1] < Operational_Profile[Profile_Stage][1]: 
+                    Profile_Stage = (Profile_Stage+1)%Total_Stages
+                    State = Operational_Profile[Profile_Stage][0]
+                    #Current_Time = Run_Time+1
                 else:
                     
                     Global_Time.append(Current_Time)
                     Global_Tide.append(6*np.cos(2*np.pi*0.0000231*Current_Time-np.pi)+6)
-                    Global_Volume.append(Global_Volume[Current_Time-1]-Step_Size*Area*Discharge_Coefficient*np.sqrt(2*G)*np.sqrt((Global_Volume[Current_Time-1])/(M)-(Global_Tide[Current_Time])-Turbine_Loss-Pipe_Loss))
+                    
+                    if (Global_Volume[Current_Time-1])/(M)-(Global_Tide[Current_Time]) < 0:
+                        print("WARNING: Target value of " + str(Operational_Profile[Profile_Stage][1]) + "m in state 2 could not be met!")
+                        Global_Volume.append(Global_Volume[-1])
+                        Profile_Stage = (Profile_Stage+1)%Total_Stages
+                        State = Operational_Profile[Profile_Stage][0]
+                    else:
+                        Global_Volume.append(Global_Volume[Current_Time-1]-Step_Size*Area*Discharge_Coefficient*np.sqrt(2*G)*np.sqrt((Global_Volume[Current_Time-1])/(M)-(Global_Tide[Current_Time])-Turbine_Loss-Pipe_Loss))
+                    
                     Global_Head.append((Global_Volume[Current_Time])/(M))
                     Current_Time += 1
-            #Check exit condition
-            #Break or increment tide and update lagoon volume
             
         if State == 3:
             
@@ -179,17 +194,7 @@ def Run_Simulation(**kwargs):
             #Check exit condition
             #Break or increment tide and update lagoon volume
             #NEED EQUATION FOR THIS
-            
-    
-#    for i in range(40000):
-#        
-#        Time.append(i)
-#        Euler_Volume.append(Euler_Volume[i]-Step_Size*Area*np.sqrt((2*G*Euler_Volume[i])/(M)))
-#        #Tidal_Function = 2*np.sin(2*np.pi*0.0000463*i+1)+5
-#        #Tidal_Function = 6*np.cos(2*np.pi*0.0000231*i-np.pi)+6
-#        Tidal_Function = 0
-#        Euler_Volume_Tide.append(Euler_Volume_Tide[i]-Step_Size*Area*Discharge_Coefficient*np.sqrt(2*G)*np.sqrt((Euler_Volume_Tide[i])/(M)-(Tidal_Function)-Turbine_Loss-Pipe_Loss))
-#            
+        print("Current time: " + str(Current_Time))    
     
     plt.figure(figsize=plt.figaspect(1)*2)
     
@@ -200,19 +205,18 @@ def Run_Simulation(**kwargs):
     ax.set_ylabel("Volume (m^3)")
     second_ax.set_ylabel('Head (m)')
    
-    No_Tide_Plot = ax.plot(Time, Euler_Volume, label="No tide")
-    With_Tide_Plot = ax.plot(Time, Euler_Volume_Tide, label="With tide")
     Filling_Plot = ax.plot(Global_Time, Global_Volume, label="Lagoon Volume", color="deepskyblue", linewidth=2)
     Lagoon_Head_Plot = second_ax.plot(Global_Time, Global_Head, "--", label="Lagoon head", color="green")
     Tide_Height_Plot = second_ax.plot(Global_Time, Global_Tide, "--", label="Tide height", color ="blue")
     
-    Lines = No_Tide_Plot+With_Tide_Plot+Filling_Plot+Lagoon_Head_Plot+Tide_Height_Plot
+    Lines = Filling_Plot+Lagoon_Head_Plot+Tide_Height_Plot
     Labels =[l.get_label() for l in Lines]
     ax.legend(Lines, Labels)
     
     plt.minorticks_on()
     ax.grid(which='major', color='black', linestyle='-', linewidth=1)
     ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
+    ax.set_ylim(0,2e7)
     
     
 def Heads_Graph():          #Shows a graph of lagoon height and tidal height against time parameter. Tidal height is built into program, volume comes from analyitic function call.
@@ -291,13 +295,12 @@ def Analyitic_Simulation_Simple(Duration=21600):        #Calculates the volume a
     return Volume, Time
         
         
-def test(**kwargs):
-    print(kwargs)
-    print("\n")
-    print(type(kwargs))
-    name = kwargs["name"]
-    print(name)    
-        
+def Setup_Profile(states=[]):
+    
+    #Format [[State number, triggering lagoon head], ...]
+    print("Adding profile to list of saved profiles. This is profile number " + str(len(Profile_List)+1))
+    Profile_List.append(states)
+
         
         
         
