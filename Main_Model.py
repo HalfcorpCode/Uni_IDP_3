@@ -19,7 +19,7 @@ import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 import datetime
 
-#Variables ==================================================================== 
+#Global Variables =============================================================
 
 Global_Time = [0]
 Global_Volume = [0]  
@@ -27,33 +27,44 @@ Global_Tide = [0]
 Global_Head = [0] 
 Profile_List = []
 
-#Main Program =================================================================
+Civil_Price = 0
+Blade_Price = 0
+Turbine_Price = 0
+Gearbox_Price = 0
+Generator_Price = 0
+Sluice_Price = 0
 
-'''Add in function that allows the used to setup operational mode profile objects that are used by the simulation function'''
+#Main Program =================================================================
+print("\n")
+print("======================================================================")
+print("IDP 3 Group 9: Tidal Lagoon Mathematical Model and Simulation Software")
+print("======================================================================")
+print("This software simulates the performance of our tidal lagoon system under different configurations and operating conditions. Type help() to see a list of commands and how to use them")
     
 def Run_Simulation(**kwargs):
 
     #Parameters passed:  
     
+    Step_Size = kwargs["step"]
     Turbines = kwargs["turbines"]
     Turbine_Diameter = kwargs["diameter"]
-    Step_Size = kwargs["step"]
     Sluices = kwargs["slucies"]
     Sluice_Size = kwargs["sluice_size"]
-    
     Profile_Number = kwargs["profile"]
     Run_Time = kwargs["time"]
+    Econ = kwargs["econ"]
+    Output = kwargs["output"]
+    Graphs = kwargs["graphs"]
     
-    #Economic Parameters
+    #Efficiency terms:
     
-    #Fixed costs - Start up costs, running costs, etc
-    #Variable costs
-    #Take into account maintencance downtimes
-    
-    ###################
+    Eff_Turbine = 0
+    Eff_Gearbox = 0
+    Eff_Generator = 0
     
     #Global Variables
     
+    global Civil_Price, Blade_Price, Turbine_Price, Gearbox_Price, Generator_Price, Sluice_Price
     global Global_Time, Global_Volume, Global_Tide, Global_Head
     Global_Time = [0]
     Global_Volume = [0]  
@@ -196,28 +207,53 @@ def Run_Simulation(**kwargs):
             #NEED EQUATION FOR THIS
         print("Current time: " + str(Current_Time))    
     
-    plt.figure(figsize=plt.figaspect(1)*2)
+    #Energy generation calculations
     
-    ax = plt.axes()
-    second_ax = ax.twinx()
-    plt.title("Forward Euler")
-    ax.set_xlabel("Time (s)")
-    ax.set_ylabel("Volume (m^3)")
-    second_ax.set_ylabel('Head (m)')
-   
-    Filling_Plot = ax.plot(Global_Time, Global_Volume, label="Lagoon Volume", color="deepskyblue", linewidth=2)
-    Lagoon_Head_Plot = second_ax.plot(Global_Time, Global_Head, "--", label="Lagoon head", color="green")
-    Tide_Height_Plot = second_ax.plot(Global_Time, Global_Tide, "--", label="Tide height", color ="blue")
+    #Log headloss across turbine at every step and store in an array
+    #Multiply each value by thing to get energy/power
+    #Make graph of power over time and total cumlative energy generated
+    #Print peak power and total energy
+    #Pass energy through inefficiencies of electrical system
+    #Print final power and energy and percentage lost
     
-    Lines = Filling_Plot+Lagoon_Head_Plot+Tide_Height_Plot
-    Labels =[l.get_label() for l in Lines]
-    ax.legend(Lines, Labels)
     
-    plt.minorticks_on()
-    ax.grid(which='major', color='black', linestyle='-', linewidth=1)
-    ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
-    ax.set_ylim(0,2e7)
+    if Econ == True:                                                            #Section for calculating economic assessment.
+        
+        print("Running economic assessment of configuration...")
+    #Fixed costs - Start up costs, running costs, etc
+    #Variable costs
+    #Take into account maintencance downtimes
     
+    if Graphs == True:
+    
+        plt.figure(figsize=plt.figaspect(1)*2)
+        
+        ax = plt.axes()
+        second_ax = ax.twinx()
+        plt.title("Forward Euler")
+        ax.set_xlabel("Time (s)")
+        ax.set_ylabel("Volume (m^3)")
+        second_ax.set_ylabel('Head (m)')
+       
+        Filling_Plot = ax.plot(Global_Time, Global_Volume, label="Lagoon Volume", color="deepskyblue", linewidth=2)
+        Lagoon_Head_Plot = second_ax.plot(Global_Time, Global_Head, "--", label="Lagoon head", color="green")
+        Tide_Height_Plot = second_ax.plot(Global_Time, Global_Tide, "--", label="Tide height", color ="blue")
+        
+        Lines = Filling_Plot+Lagoon_Head_Plot+Tide_Height_Plot
+        Labels =[l.get_label() for l in Lines]
+        ax.legend(Lines, Labels)
+        
+        plt.minorticks_on()
+        ax.grid(which='major', color='black', linestyle='-', linewidth=1)
+        ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
+        ax.set_ylim(0,2e7)
+    
+
+def Print_Costs():
+    print("Here are some costs")
+    
+def Set_Costs(**kwargs):
+    print("Setting costs")
     
 def Heads_Graph():          #Shows a graph of lagoon height and tidal height against time parameter. Tidal height is built into program, volume comes from analyitic function call.
     
@@ -301,7 +337,28 @@ def Setup_Profile(states=[]):
     print("Adding profile to list of saved profiles. This is profile number " + str(len(Profile_List)+1))
     Profile_List.append(states)
 
+def help(*args):
+    
+    if len(args) == 0:
+    
+        print("Help:")
+        print("\n1. To run a simulation, you must first setup an operating profile to tell the lagoon how it should operate. To learn how to do this, type help('profile'). \
+               Alternativly, you can use the defaul profile already built into the program.")
+        print("\n2. To learn how to run a simulation, type help('sim').")
+    
+    elif args[0] == "profile":
         
+        print("Help profile:")
+        print("\nHere is some help info on profiles")
+        
+    elif args[0] == "sim":
+        
+        print("Help simulation:")
+        print("\nHere is some help info on running a simulation")
+        
+    else:
+        
+        print("Help command unknown, are you sure you typed it correctly?")
         
         
         
