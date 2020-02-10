@@ -17,7 +17,7 @@ import math as m
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
-import datetime
+import logging
 
 #Global Variables =============================================================
 
@@ -33,14 +33,19 @@ Global_Head_Loss = [0]
 Global_Power = [0]
 Global_Power_Elec = []
 
-Civil_Price = 10000000
-Blade_Price = 20000
-Turbine_Price = 50000
-Gearbox_Price = 150000
-Generator_Price = 100000000
-Sluice_Price = 30000
+Civil_Price = 10000000          #
+Blade_Price = 20000             
+Turbine_Price = 50000           #
+Gearbox_Price = 150000          #Good
+Generator_Price = 150000     #Check but should be good
+Sluice_Price = 30000            #
 
 #Main Program =================================================================
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+log = logging.getLogger()
+log.setLevel(logging.WARNING)
+
 print("\n")
 print("======================================================================")
 print("IDP 3 Group 9: Tidal Lagoon Mathematical Model and Simulation Software")
@@ -67,7 +72,7 @@ def Run_Simulation(**kwargs):
     
     #Efficiency terms:
     
-    Eff_Turbine = 0.9
+    Eff_Turbine = 0.6
     Eff_Gearbox = 0.85
     Eff_Generator = 0.97
     
@@ -98,7 +103,7 @@ def Run_Simulation(**kwargs):
     G = 9.807
     rho = 997
     Tidal_Function = 0
-    Discharge_Coefficient= 0.65
+    Discharge_Coefficient= 0.9
     Sluicing_Discharge_Coefficient = 0.95
     State = 0                   #0 = Waiting, 1 = filling sluice, 2 = draining generation, 3 = filling generation, 4 = draining sluice
     Current_Time = 1
@@ -107,6 +112,7 @@ def Run_Simulation(**kwargs):
     Total_Stages = len(Operational_Profile)
     Total_Mechanical_Energy = 0
     Total_Electrical_Energy = 0
+    
     #Initial Calculations
     
     Area = np.pi*np.power((Turbine_Diameter/2),2)*Turbines
@@ -127,20 +133,26 @@ def Run_Simulation(**kwargs):
     If value in square root turns negative, return an error. (This should only happen if sluice gates are not shut at the right time, it means the tide is higher than the lagoon)
     '''
     
-    #State = operational profile.startstate
+    if Output == True:
+        log.setLevel(logging.INFO)
+    else:
+        log.setLevel(logging.WARNING)
+    
+    print("\nRunning simulation...\n")
+    
     State = Operational_Profile[0][0]
     
     while Current_Time < Run_Time:
         
         if State == 0:
             
-            print("In state 0: Waiting for tidal shift")
+            log.info("In state 0: Waiting for tidal shift")
             
             while State == 0:
                 
                 if Current_Time > Run_Time:
                     State = 5
-                    print("Runtime elapsed")
+                    log.info("Runtime elapsed")
                 elif Global_Tide[Current_Time-1] < Operational_Profile[Profile_Stage][1]: 
                     Profile_Stage = (Profile_Stage+1)%Total_Stages
                     State = Operational_Profile[Profile_Stage][0]
@@ -158,13 +170,13 @@ def Run_Simulation(**kwargs):
             
         if State == 1:
             
-            print("In state 1: Filling lagoon via sluicing")
+            log.info("In state 1: Filling lagoon via sluicing")
             
             while State == 1:
                 
                 if Current_Time > Run_Time:
                     State = 5
-                    print("Runtime elapsed")
+                    log.info("Runtime elapsed")
                 elif Global_Head[Current_Time-1] > Operational_Profile[Profile_Stage][1]:
                     Profile_Stage = (Profile_Stage+1)%Total_Stages
                     State = Operational_Profile[Profile_Stage][0]  
@@ -175,7 +187,7 @@ def Run_Simulation(**kwargs):
                     #Global_Volume.append(Global_Volume[Current_Time-1]+Step_Size*Sluice_Area*Sluicing_Discharge_Coefficient*np.sqrt(2*G)*np.sqrt(Global_Tide[Current_Time]-((Global_Volume[Current_Time-1])/(M))-Pipe_Loss))
                     
                     if (Global_Tide[Current_Time])-((Global_Volume[Current_Time-1])/(M)) < 0:
-                        print("WARNING: Target value of " + str(Operational_Profile[Profile_Stage][1]) + "m in state 1 could not be met!")
+                        log.info("WARNING: Target value of " + str(Operational_Profile[Profile_Stage][1]) + "m in state 1 could not be met!")
                         Global_Volume.append(Global_Volume[-1])
                         Profile_Stage = (Profile_Stage+1)%Total_Stages
                         State = Operational_Profile[Profile_Stage][0]
@@ -195,13 +207,13 @@ def Run_Simulation(**kwargs):
         
         if State == 2:
             
-            print("In state 2: Draining lagoon via energy generation")
+            log.info("In state 2: Draining lagoon via energy generation")
             
             while State == 2:
                 
                 if Current_Time > Run_Time:
                     State = 5
-                    print("Runtime elapsed")
+                    log.info("Runtime elapsed")
                 elif Global_Head[Current_Time-1] < Operational_Profile[Profile_Stage][1]: 
                     Profile_Stage = (Profile_Stage+1)%Total_Stages
                     State = Operational_Profile[Profile_Stage][0]
@@ -212,7 +224,7 @@ def Run_Simulation(**kwargs):
                     Global_Tide.append(6*np.cos(2*np.pi*0.0000231*Current_Time-np.pi)+6)
                     
                     if (Global_Volume[Current_Time-1])/(M)-(Global_Tide[Current_Time]) < 0:
-                        print("WARNING: Target value of " + str(Operational_Profile[Profile_Stage][1]) + "m in state 2 could not be met!")
+                        log.info("WARNING: Target value of " + str(Operational_Profile[Profile_Stage][1]) + "m in state 2 could not be met!")
                         Global_Volume.append(Global_Volume[-1])
                         Profile_Stage = (Profile_Stage+1)%Total_Stages
                         State = Operational_Profile[Profile_Stage][0]
@@ -225,7 +237,7 @@ def Run_Simulation(**kwargs):
                         Global_Velocity.append(np.sqrt(2*G)*np.sqrt((Global_Volume[Current_Time-1])/(M)-(Global_Tide[Current_Time])-Turbine_Loss-Pipe_Loss))
                         Global_Discharge.append(Global_Velocity[-1]*Area*Discharge_Coefficient)
                         Global_Head_Loss.append(0.5*Global_Velocity[-1])
-                        Global_Power.append((rho/G)*Global_Discharge[-1]*0.5*Global_Velocity[-1])
+                        Global_Power.append((rho*G)*Global_Discharge[-1]*((Global_Volume[Current_Time])/(M)-Global_Tide[-1]))
                     
                     Global_Head.append((Global_Volume[Current_Time])/(M))
                     Global_Head_Difference.append(Global_Head[-1]-Global_Tide[-1])
@@ -233,18 +245,20 @@ def Run_Simulation(**kwargs):
             
         if State == 3:
             
-            print("In state 3: Filling lagoon via energy generation")
+            log.info("In state 3: Filling lagoon via energy generation")
             #Check exit condition
             #Break or increment tide and update lagoon volume
             #NEED EQUATION FOR THIS
             
         if State == 4:
             
-            print("In state 4: Draining lagoon via sluicing")
+            log.info("In state 4: Draining lagoon via sluicing")
             #Check exit condition
             #Break or increment tide and update lagoon volume
             #NEED EQUATION FOR THIS
-        print("Current time: " + str(Current_Time))    
+        log.info("Current time: " + str(Current_Time))    
+    
+    print("\nSimulation complete\n")
     
     #Energy generation calculations
     print("\n================================================================")
@@ -356,7 +370,41 @@ def Run_Simulation(**kwargs):
             Pax.grid(which='major', color='black', linestyle='-', linewidth=1)
             Pax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
             
+def Optimize(Item):
+
+    if Item == "blade_size":
+        
+        global Global_Power
+        Power = []
+        Diameters = [1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
     
+        print("Calculating blade diameter optimization")
+        Setup_Profile([[1,12],[0,5],[2,0]])
+        
+        for i in range(10,105,5):
+            
+            Total_Mechanical_Energy = 0
+            Run_Simulation(step=1, turbines=5, diameter=(i/10), slucies=0, sluice_size=80, profile=1, time=60000, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+            
+            for i2 in Global_Power:
+                #Global_Power_Elec.append(i*Eff_Turbine*Eff_Gearbox*Eff_Generator)
+                Total_Mechanical_Energy += i2
+                
+            Power.append(Total_Mechanical_Energy)
+
+        plt.figure(figsize=plt.figaspect(1)*2)
+        ax = plt.axes()
+        plt.title("Energy Output Vs Blade Diameter")
+        ax.set_xlabel("Blade Diameter (m)")
+        ax.set_ylabel("Energy Output (J)")
+
+        Diameter_Plot = ax.plot(Diameters, Power, label="1 turbine", color="red", linewidth=2)
+        ax.legend("1 turbine")
+        plt.minorticks_on()
+        ax.grid(which='major', color='black', linestyle='-', linewidth=1)
+        ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
+
+
 
 def Print_Costs():
     print("Here are some costs")
@@ -396,20 +444,22 @@ def Tidal_Function_Testing(Interval=86400):     #Shows a graph of a desired tida
     xlim = np.arange(0, 60* 60 *26, 60*60*2)
     Time = [0]
     Tide_Height = [0]
+    FFT_Tidal_Function = [0]
     
     for i in range(Interval):
         
         Time.append(i)
         Tide_Height.append(6*np.cos(2*np.pi*0.0000231*i-np.pi)+6)
+        FFT_Tidal_Function.append((6500*np.sin(2*np.pi*(1.57e-7)*i*10))+(6500*np.sin(3.97e-8)*i*10)+(2500*np.sin(2*np.pi*1.523e-7*i)))
     
     plt.figure(figsize=plt.figaspect(1)*2)
     ax = plt.axes() #proj_type = 'ortho'
     plt.title("Ideal Semidiurnal Tide Over 24 Hours")
     ax.set_xlabel("Time (H)")
     ax.set_ylabel("Head (m)")
-    ax.plot(Time, Tide_Height)
+    ax.plot(Time, FFT_Tidal_Function)
     plt.minorticks_on()
-    plt.xticks(xlim, [str(n).zfill(2) + ':00' for n in np.arange(0, 26,2)])
+    #plt.xticks(xlim, [str(n).zfill(2) + ':00' for n in np.arange(0, 26,2)])
     ax.grid(which='major', color='black', linestyle='-', linewidth=1)
     ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
     
@@ -418,14 +468,16 @@ def Analyitic_Simulation_Simple(Duration=21600):        #Calculates the volume a
     M = 1453217
     G = 9.807
     V_0 = 18891820
-    Area = 40*5
+    Area = (np.power(7.5,2)/4)*np.pi
     Time = [0]
     Volume = [0]
     Volume[0] = V_0
+    Euler_Volume = [V_0]
  
     for i in range(Duration):
         Time.append(i)
         Volume.append(np.power(np.sqrt(V_0)-0.5*Area*i*np.sqrt((2*G)/(M)),2))
+        Euler_Volume.append(Euler_Volume[-1]-(Area*np.sqrt(2*G*(Euler_Volume[-1]/M))))
     
     plt.figure(figsize=plt.figaspect(1)*2)
     ax = plt.axes() #proj_type = 'ortho'
@@ -433,6 +485,8 @@ def Analyitic_Simulation_Simple(Duration=21600):        #Calculates the volume a
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Volume (m^3)")
     ax.plot(Time, Volume)
+    ax.plot(Time, Euler_Volume)
+    ax.legend("Analytical", "Numerical")
     plt.minorticks_on()
     ax.grid(which='major', color='black', linestyle='-', linewidth=1)
     ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)     
