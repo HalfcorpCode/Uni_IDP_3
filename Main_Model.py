@@ -57,6 +57,7 @@ def Run_Simulation(**kwargs):
     #Parameters passed:  
     
     Step_Size = kwargs["step"]
+    Tidal_Function = kwargs["tidal_function"]
     Turbines = kwargs["turbines"]
     Turbine_Diameter = kwargs["diameter"]
     Sluices = kwargs["slucies"]
@@ -448,9 +449,10 @@ def Tidal_Function_Testing(Interval=86400):     #Shows a graph of a desired tida
     
     for i in range(Interval):
         
-        Time.append(i)
-        Tide_Height.append(6*np.cos(2*np.pi*0.0000231*i-np.pi)+6)
-        FFT_Tidal_Function.append((6500*np.sin(2*np.pi*(1.57e-7)*i*10))+(6500*np.sin(3.97e-8)*i*10)+(2500*np.sin(2*np.pi*1.523e-7*i)))
+        Time.append(i*10)
+        #Tide_Height.append(6*np.cos(2*np.pi*0.0000231*i-np.pi)+6)
+        #FFT_Tidal_Function.append((3.68*np.sin(2*np.pi*(2.236e-5)*i*10))+(1.499*np.cos(2*np.pi*(2.315e-5)*i*10))+(0.73*np.cos(2*np.pi*(2.195e-5)*i*10))+(0.3581*np.sin(2*np.pi*(2.322e-5)*i*10)))
+        FFT_Tidal_Function.append((3.678*np.cos(2*np.pi*(2.236e-5)*i*10+(48.06*(np.pi/180))))+(1.4298*np.cos(2*np.pi*(2.239e-5)*i*10-(130.6*(np.pi/180))))+(1.4986*np.cos(2*np.pi*(2.315e-5)*i*10+(176.7*(np.pi/180))))+(0.7298*np.cos(2*np.pi*(2.194e-5)*i*10-(53.75*(np.pi/180)))))
     
     plt.figure(figsize=plt.figaspect(1)*2)
     ax = plt.axes() #proj_type = 'ortho'
