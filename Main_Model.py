@@ -505,14 +505,20 @@ def help(*args):
     if len(args) == 0:
     
         print("Help:")
-        print("\n1. To run a simulation, you must first setup an operating profile to tell the lagoon how it should operate. To learn how to do this, type help('profile'). \
-               Alternativly, you can use the defaul profile already built into the program.")
+        print("\n1. To run a simulation, you must first setup an operating profile to tell the lagoon how it should operate. To learn how to do this, type help('profile'). Alternativly, you can use the defaul profile already built into the program.")
         print("\n2. To learn how to run a simulation, type help('sim').")
     
     elif args[0] == "profile":
         
         print("Help profile:")
-        print("\nHere is some help info on profiles")
+        print("\nThe lagoon can be in one of 5 states at any given time: \
+State 0 - This is the waiting state, the lagoon is waiting for a head difference to build up before opening the sluice gates.\n\
+State 1 - The lagoon is filling WITHOUT generating electricity. In this state, turbines are not moving, water is entering the lagoon through the turbine shafts and through sluice gates in the wall.\n\
+State 2 - The lagoon is draining whilst generating electricity.\n\
+State 3 - The lagoon is filling whilst generating electricity.\n\
+State 4 - The lagoon is draining WITHOUT generating electricity.\n")
+        print("The operational algorithm governs which states the lagoon switches between and when. The algorithm is built up of stages, each stage coresponds to one state and the condition that must be met to move to the next stage (state).")
+    
         
     elif args[0] == "sim":
         
