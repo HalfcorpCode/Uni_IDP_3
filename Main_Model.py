@@ -33,12 +33,13 @@ Global_Head_Loss = [0]
 Global_Power = [0]
 Global_Power_Elec = []
 
-Civil_Price = 10000000          #
-Blade_Price = 20000             
-Turbine_Price = 50000           #
-Gearbox_Price = 150000          #Good
+Civil_Price = 60000000        #Guess
+Blade_Price = 1500000        #Good    
+Turbine_Price = 2000000        #(Just guide vanes atm)
+Gearbox_Price = 150000       #Good
 Generator_Price = 150000     #Check but should be good
-Sluice_Price = 30000            #
+Electrical_Price = 100000    #Guess
+Sluice_Price = 200000        #Good
 
 #Main Program =================================================================
 
@@ -73,7 +74,7 @@ def Run_Simulation(**kwargs):
     
     #Efficiency terms:
     
-    Eff_Turbine = 0.6
+    Eff_Turbine = 0.85
     Eff_Gearbox = 0.85
     Eff_Generator = 0.97
     
@@ -102,12 +103,14 @@ def Run_Simulation(**kwargs):
     Time = [0]
     M = 1453217
     G = 9.807
-    rho = 997
-    Tidal_Function = 0
-    Discharge_Coefficient= 0.9
-    Sluicing_Discharge_Coefficient = 0.95
+    rho = 1029
+    Discharge_Coefficient= 0.8
+    Sluicing_Discharge_Coefficient = 0.98
+    Friction_Factor = 0.00035
+    Draft_Length = 10
+    Draft_Diameter = 10
     State = 0                   #0 = Waiting, 1 = filling sluice, 2 = draining generation, 3 = filling generation, 4 = draining sluice
-    Current_Time = 1
+    Current_Time = Step_Size
     Operational_Profile = Profile_List[Profile_Number-1]
     Profile_Stage = 0
     Total_Stages = len(Operational_Profile)
@@ -116,10 +119,8 @@ def Run_Simulation(**kwargs):
     
     #Initial Calculations
     
-    Area = np.pi*np.power((Turbine_Diameter/2),2)*Turbines
-    Sluice_Area =  (np.pi*np.power((Turbine_Diameter/2),2)*Turbines)+(Sluice_Size*Sluices)
-    Pipe_Loss = 0.0
-    Turbine_Loss = 0
+    Area = np.pi*np.power((Turbine_Diameter/4),2)*Turbines
+    Sluice_Area =  (np.pi*np.power((Turbine_Diameter/4),2)*Turbines)+(Sluice_Size*Sluices)
     
     '''
     Read operational algorithm profile, then switch between 5 different states, checking stopping conditions each time. Put Euler approximation in different function
@@ -154,12 +155,12 @@ def Run_Simulation(**kwargs):
                 if Current_Time > Run_Time:
                     State = 5
                     log.info("Runtime elapsed")
-                elif Global_Tide[Current_Time-1] < Operational_Profile[Profile_Stage][1]: 
+                elif Global_Tide[-1] < Operational_Profile[Profile_Stage][1]: 
                     Profile_Stage = (Profile_Stage+1)%Total_Stages
                     State = Operational_Profile[Profile_Stage][0]
                 else:
                     Global_Time.append(Current_Time)
-                    Global_Tide.append(6*np.cos(2*np.pi*0.0000231*Current_Time-np.pi)+6)
+                    Global_Tide.append(Evaluate_Tidal_Function(Tidal_Function, Current_Time))
                     Global_Volume.append(Global_Volume[-1])
                     Global_Head.append((Global_Volume[-1])/(M))
                     Global_Head_Difference.append(Global_Head[-1]-Global_Tide[-1])
@@ -167,7 +168,7 @@ def Run_Simulation(**kwargs):
                     Global_Discharge.append(0)
                     Global_Head_Loss.append(0)
                     Global_Power.append(0)
-                    Current_Time += 1
+                    Current_Time += Step_Size
             
         if State == 1:
             
@@ -178,16 +179,16 @@ def Run_Simulation(**kwargs):
                 if Current_Time > Run_Time:
                     State = 5
                     log.info("Runtime elapsed")
-                elif Global_Head[Current_Time-1] > Operational_Profile[Profile_Stage][1]:
+                elif Global_Head[-1] > Operational_Profile[Profile_Stage][1]:
                     Profile_Stage = (Profile_Stage+1)%Total_Stages
                     State = Operational_Profile[Profile_Stage][0]  
                 else:
                 
                     Global_Time.append(Current_Time)
-                    Global_Tide.append(6*np.cos(2*np.pi*0.0000231*Current_Time-np.pi)+6)
+                    Global_Tide.append(Evaluate_Tidal_Function(Tidal_Function, Current_Time))
                     #Global_Volume.append(Global_Volume[Current_Time-1]+Step_Size*Sluice_Area*Sluicing_Discharge_Coefficient*np.sqrt(2*G)*np.sqrt(Global_Tide[Current_Time]-((Global_Volume[Current_Time-1])/(M))-Pipe_Loss))
                     
-                    if (Global_Tide[Current_Time])-((Global_Volume[Current_Time-1])/(M)) < 0:
+                    if (Global_Tide[-1])-((Global_Volume[-1])/(M)) < 0:
                         log.info("WARNING: Target value of " + str(Operational_Profile[Profile_Stage][1]) + "m in state 1 could not be met!")
                         Global_Volume.append(Global_Volume[-1])
                         Profile_Stage = (Profile_Stage+1)%Total_Stages
@@ -195,15 +196,19 @@ def Run_Simulation(**kwargs):
                         Global_Velocity.append(Global_Velocity[-1])
                         Global_Discharge.append(Global_Discharge[-1])
                     else:    
-                        Global_Volume.append(Global_Volume[Current_Time-1]+Step_Size*Sluice_Area*Sluicing_Discharge_Coefficient*np.sqrt(2*G)*np.sqrt((Global_Tide[Current_Time])-((Global_Volume[Current_Time-1])/(M))-Pipe_Loss))
-                        Global_Velocity.append(np.sqrt(2*G)*np.sqrt((Global_Tide[Current_Time])-((Global_Volume[Current_Time-1])/(M))-Pipe_Loss))
+                        #Global_Volume.append(Global_Volume[-1]+Step_Size*Sluice_Area*Sluicing_Discharge_Coefficient*np.sqrt(2*G)*np.sqrt((Global_Tide[-1])-((Global_Volume[-1])/(M))-Pipe_Loss))
+                        #Global_Velocity.append(np.sqrt(2*G)*np.sqrt((Global_Tide[-1])-((Global_Volume[-1])/(M))-Pipe_Loss))
+                        
+                        Global_Velocity.append(np.sqrt(2*G*((Global_Tide[-1])-((Global_Volume[-1])/(M)))/(1+Friction_Factor*(Draft_Length/Draft_Diameter))))
+                        Global_Volume.append(Global_Volume[-1]+Step_Size*Sluice_Area*Sluicing_Discharge_Coefficient*Global_Velocity[-1])
+                        
                         Global_Discharge.append(Global_Velocity[-1]*Sluice_Area*Sluicing_Discharge_Coefficient)
                         
-                    Global_Head.append((Global_Volume[Current_Time])/(M))
+                    Global_Head.append((Global_Volume[-1])/(M))
                     Global_Head_Difference.append(Global_Head[-1]-Global_Tide[-1])
                     Global_Head_Loss.append(0)
                     Global_Power.append(0)
-                    Current_Time += 1
+                    Current_Time += Step_Size
                     #print("the time is: " + str(Current_Time))
         
         if State == 2:
@@ -215,16 +220,16 @@ def Run_Simulation(**kwargs):
                 if Current_Time > Run_Time:
                     State = 5
                     log.info("Runtime elapsed")
-                elif Global_Head[Current_Time-1] < Operational_Profile[Profile_Stage][1]: 
+                elif Global_Head[-1] < Operational_Profile[Profile_Stage][1]: 
                     Profile_Stage = (Profile_Stage+1)%Total_Stages
                     State = Operational_Profile[Profile_Stage][0]
                     #Current_Time = Run_Time+1
                 else:
                     
                     Global_Time.append(Current_Time)
-                    Global_Tide.append(6*np.cos(2*np.pi*0.0000231*Current_Time-np.pi)+6)
+                    Global_Tide.append(Evaluate_Tidal_Function(Tidal_Function, Current_Time))
                     
-                    if (Global_Volume[Current_Time-1])/(M)-(Global_Tide[Current_Time]) < 0:
+                    if (Global_Volume[-1])/(M)-(Global_Tide[-1]) < 0:
                         log.info("WARNING: Target value of " + str(Operational_Profile[Profile_Stage][1]) + "m in state 2 could not be met!")
                         Global_Volume.append(Global_Volume[-1])
                         Profile_Stage = (Profile_Stage+1)%Total_Stages
@@ -234,15 +239,19 @@ def Run_Simulation(**kwargs):
                         Global_Head_Loss.append(Global_Head_Loss[-1])
                         Global_Power.append(Global_Power[-1])
                     else:
-                        Global_Volume.append(Global_Volume[Current_Time-1]-Step_Size*Area*Discharge_Coefficient*np.sqrt(2*G)*np.sqrt((Global_Volume[Current_Time-1])/(M)-(Global_Tide[Current_Time])-Turbine_Loss-Pipe_Loss))
-                        Global_Velocity.append(np.sqrt(2*G)*np.sqrt((Global_Volume[Current_Time-1])/(M)-(Global_Tide[Current_Time])-Turbine_Loss-Pipe_Loss))
+                        #Global_Volume.append(Global_Volume[-1]-Step_Size*Area*Discharge_Coefficient*np.sqrt(2*G)*np.sqrt((Global_Volume[-1])/(M)-(Global_Tide[-1])-Turbine_Loss-Pipe_Loss))
+                        #Global_Velocity.append(np.sqrt(2*G)*np.sqrt((Global_Volume[-1])/(M)-(Global_Tide[-1])-Turbine_Loss-Pipe_Loss))
+                        
+                        Global_Velocity.append(np.sqrt((2*G*((Global_Volume[-1])/(M)-(Global_Tide[-1]))*(1-Eff_Turbine))/(1-Eff_Turbine*Friction_Factor*(Draft_Length/Draft_Diameter))))
+                        Global_Volume.append(Global_Volume[-1]-Step_Size*Area*Discharge_Coefficient*Global_Velocity[-1])
+                        
                         Global_Discharge.append(Global_Velocity[-1]*Area*Discharge_Coefficient)
                         Global_Head_Loss.append(0.5*Global_Velocity[-1])
-                        Global_Power.append((rho*G)*Global_Discharge[-1]*((Global_Volume[Current_Time])/(M)-Global_Tide[-1]))
+                        Global_Power.append((rho*G)*Global_Discharge[-1]*((Global_Volume[-1])/(M)-Global_Tide[-1]))
                     
-                    Global_Head.append((Global_Volume[Current_Time])/(M))
+                    Global_Head.append((Global_Volume[-1])/(M))
                     Global_Head_Difference.append(Global_Head[-1]-Global_Tide[-1])
-                    Current_Time += 1
+                    Current_Time += Step_Size
             
         if State == 3:
             
@@ -265,14 +274,17 @@ def Run_Simulation(**kwargs):
     print("\n================================================================")
     print("Running energy calculations...")
     
-    for i in Global_Power:
-        Global_Power_Elec.append(i*Eff_Turbine*Eff_Gearbox*Eff_Generator)
-        Total_Mechanical_Energy += i
-        Total_Electrical_Energy += Global_Power_Elec[-1]
+    for Power in Global_Power:
+        
+        if np.isnan(Power) == True:
+            Power = 0
+            
+        Global_Power_Elec.append(Power*Eff_Turbine*Eff_Gearbox*Eff_Generator)
+        Total_Mechanical_Energy += int(Power*Step_Size)
+        Total_Electrical_Energy += int(Global_Power_Elec[-1]*Step_Size)
 
     Energy_Lost = Total_Mechanical_Energy-Total_Electrical_Energy
     Efficiency = (Eff_Turbine*Eff_Gearbox*Eff_Generator)
-    
     print("Total mechanical energy generated: " + str(Total_Mechanical_Energy))
     print("Energy lost: " + str(Energy_Lost))
     print("System efficiency: " + str(Efficiency))
@@ -286,22 +298,44 @@ def Run_Simulation(**kwargs):
         print("\n================================================================")
         print("Running economic assessment of configuration...")
         
-        Startup_Costs = Civil_Price+(Turbines*(Blade_Price+Turbine_Price+Gearbox_Price+Generator_Price+Sluice_Price))+(Sluices*Sluice_Price)
-        Running_Costs_Day = 1000 #a day
+        Startup_Costs = Civil_Price+(Turbines*(Blade_Price+Turbine_Price+Gearbox_Price+Generator_Price+Electrical_Price+(2*Sluice_Price)))+(Sluices*Sluice_Price)
+        Running_Costs_Day = 823 #a day
         Total_Running_Costs = Running_Costs_Day*(Run_Time/86400)
         Energy_Price = 50/1000 #per kWh
         Turnover = (Total_Electrical_Energy/(3.6e+6))*Energy_Price
         Gross_Profit = Turnover-Total_Running_Costs
         Net_Profit = Gross_Profit-Startup_Costs
+        Payback_Time = Startup_Costs/Gross_Profit
+        
+        Total_Costs_Gradient = (Total_Running_Costs)
+        #Total_Costs_Equation = Total_Running_Costs*x + Startup_Costs
+        Revenue_Gradient = Turnover
+        #Revenue_Equation = Turnover*x
         
         print("Startup costs: " + str(Startup_Costs))
         print("Running costs: " + str(Total_Running_Costs))
         print("Turnover: " + str(Turnover))
         print("Gross profit: " + str(Gross_Profit))
-        print("Net profit " + str(Net_Profit))
+        print("Net profit: " + str(Net_Profit))
+        print("Pay back time in years: " + str(Payback_Time))
         
-    #Fixed costs - Start up costs, running costs, etc
-    #Variable costs
+        plt.figure(figsize=plt.figaspect(1)*2)
+        ax = plt.axes()
+        plt.title("Break-Even Analysis")
+        ax.set_xlabel("Time (Years)")
+        ax.set_ylabel("Equity (£)")
+            
+        Fixed_Costs_Plot = ax.plot([0,Payback_Time,2*Payback_Time], [Startup_Costs, Startup_Costs, Startup_Costs], "--", label="Fixed costs", color="red", linewidth=3)
+        Total_Costs_Plot = ax.plot([0,Payback_Time,2*Payback_Time], [Startup_Costs, (Total_Running_Costs*Payback_Time + Startup_Costs), (Total_Running_Costs*Payback_Time*2 + Startup_Costs)], "--", label="Total costs", color="darkred", linewidth=3)
+        Revenue_Plot = ax.plot([0,Payback_Time,2*Payback_Time], [0, (Turnover*Payback_Time), (Turnover*Payback_Time*2)], label="Revenue", color="blue", linewidth=3)
+        
+        Lines = Fixed_Costs_Plot+Total_Costs_Plot+Revenue_Plot
+        Labels =[l.get_label() for l in Lines]
+        ax.legend(Lines, Labels)
+        plt.minorticks_on()
+        ax.grid(which='major', color='black', linestyle='-', linewidth=1)
+        ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
+        
     #Take into account maintencance downtimes
     
     if Graphs == True:
@@ -313,7 +347,7 @@ def Run_Simulation(**kwargs):
         plt.title("Lagoon Volume, Head and Tide Vs Time")
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Volume (m^3)")
-        second_ax.set_ylabel('Head (m)')
+        second_ax.set_ylabel('Elevation (m)')
        
         Filling_Plot = ax.plot(Global_Time, Global_Volume, label="Lagoon Volume", color="deepskyblue", linewidth=3)
         Lagoon_Head_Plot = second_ax.plot(Global_Time, Global_Head, "--", label="Lagoon head", color="green", linewidth=2)
@@ -370,42 +404,150 @@ def Run_Simulation(**kwargs):
             plt.minorticks_on()
             Pax.grid(which='major', color='black', linestyle='-', linewidth=1)
             Pax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
-            
+ 
+def Evaluate_Tidal_Function(Type, Time):
+    
+    if Type == "sine":
+        return (6.5*np.cos(2*np.pi*0.0000231*Time-np.pi)+6.5)
+    
+    elif Type == "sine_average":
+        return (4*np.cos(2*np.pi*0.0000231*Time-np.pi)+6.5)
+    elif Type == "Newport_1":
+        Time += 14000
+        return ( (3.678*np.cos(2*np.pi*(2.236e-5)*Time+(48.06*(np.pi/180)))) + (1.4298*np.cos(2*np.pi*(2.239e-5)*Time-(130.6*(np.pi/180)))) + (1.4986*np.cos(2*np.pi*(2.315e-5)*Time+(176.7*(np.pi/180)))) + (0.7298*np.cos(2*np.pi*(2.194e-5)*Time-(53.75*(np.pi/180)))) + 6.278)
+           
 def Optimize(Item):
 
+    global Global_Power, Profile_List
+    
     if Item == "blade_size":
         
-        global Global_Power
         Power = []
-        Diameters = [1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
+        Diameters = np.arange(1,12.5,0.5)
     
         print("Calculating blade diameter optimization")
         Setup_Profile([[1,12],[0,5],[2,0]])
         
-        for i in range(10,105,5):
+        for Turbine in np.arange(1,21,1):
+
+            Power.append([])
             
-            Total_Mechanical_Energy = 0
-            Run_Simulation(step=1, turbines=5, diameter=(i/10), slucies=0, sluice_size=80, profile=1, time=60000, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
-            
-            for i2 in Global_Power:
-                #Global_Power_Elec.append(i*Eff_Turbine*Eff_Gearbox*Eff_Generator)
-                Total_Mechanical_Energy += i2
+            for Diameter in np.arange(1,12.5,0.5):
                 
-            Power.append(Total_Mechanical_Energy)
+                Total_Mechanical_Energy = 0
+                Run_Simulation(step=10, tidal_function="sine", turbines=Turbine, diameter=Diameter, slucies=0, sluice_size=80, profile=1, time=60000, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+                
+                for Energy in Global_Power:
+                    #Global_Power_Elec.append(i*Eff_Turbine*Eff_Gearbox*Eff_Generator)
+                    Total_Mechanical_Energy += Energy
+                    
+                Power[Turbine-1].append(Total_Mechanical_Energy)
 
         plt.figure(figsize=plt.figaspect(1)*2)
         ax = plt.axes()
-        plt.title("Energy Output Vs Blade Diameter")
+        plt.title("Energy Output Vs Blade Diameter For Different Number of Turbines")
         ax.set_xlabel("Blade Diameter (m)")
         ax.set_ylabel("Energy Output (J)")
-
-        Diameter_Plot = ax.plot(Diameters, Power, label="1 turbine", color="red", linewidth=2)
-        ax.legend("1 turbine")
+        
+        Count = 0
+        
+        for i in Power:
+            Temp = ax.plot(Diameters, Power[Count], label=("Turbines: " + str(Count+1)), linewidth=2)
+            Count += 1
+            
+        #ax.legend("1 turbine","2 turbines","3 turbines","4 turbines","5 turbines","6 turbines","7 turbines","8 turbines","9 turbines","10 turbines","11 turbines","12 turbines","13 turbinse","14 turbines","15 turbines","16 turbines","17 turbines","18 turbines","19 turbines","20 turbines",)
+        ax.legend()
         plt.minorticks_on()
         ax.grid(which='major', color='black', linestyle='-', linewidth=1)
         ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
+        
+    elif Item == "turbine_number":
+        
+        Power = []
+        Turbines = np.arange(1,21,1)
+        Diameters = np.arange(1,12.5,0.5)
+    
+        print("Calculating turbine number optimization")
+        Setup_Profile([[1,12],[0,5],[2,0]])
+        Count = 0
+        
+        for Diameter in np.arange(1,12.5,0.5):
 
+            Power.append([])
+            Count += 1
+            
+            for Turbine in np.arange(1,21,1):
+                
+                Total_Mechanical_Energy = 0
+                Run_Simulation(step=10, tidal_function="sine", turbines=Turbine, diameter=Diameter, slucies=0, sluice_size=80, profile=1, time=60000, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+                
+                for Energy in Global_Power:
+                    #Global_Power_Elec.append(i*Eff_Turbine*Eff_Gearbox*Eff_Generator)
+                    Total_Mechanical_Energy += Energy
+                    
+                Power[Count-1].append(Total_Mechanical_Energy)
 
+        plt.figure(figsize=plt.figaspect(1)*2)
+        ax = plt.axes()
+        plt.title("Energy Output Vs Number of Turbines For Different Blasde Diameters")
+        ax.set_xlabel("Number of Turbines")
+        ax.set_ylabel("Energy Output (J)")
+        
+        Count = 0
+        
+        for i in Power:
+            Temp = ax.plot(Turbines, Power[Count], label=("Diameter: " + str(Diameters[Count])), linewidth=2)
+            Count += 1
+            
+        #ax.legend("1 turbine","2 turbines","3 turbines","4 turbines","5 turbines","6 turbines","7 turbines","8 turbines","9 turbines","10 turbines","11 turbines","12 turbines","13 turbinse","14 turbines","15 turbines","16 turbines","17 turbines","18 turbines","19 turbines","20 turbines",)
+        ax.legend()
+        plt.minorticks_on()
+        ax.grid(which='major', color='black', linestyle='-', linewidth=1)
+        ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
+        
+    elif Item == "algorithm":
+        
+        Profile_List = []
+        Power = []
+        Triggers = np.arange(12,-1,-0.5)
+        Count = 1
+        Turbine_Count = 0
+        
+        for Turbines in np.arange(1,21,1):
+        
+            Power.append([])
+            Profile_List = []
+            Turbine_Count += 1
+            
+            for i in np.arange(12,-1,-0.5):
+                
+                Total_Mechanical_Energy = 0
+                Setup_Profile([[1,12],[0,i],[2,0]])
+                Run_Simulation(step=10, tidal_function="sine", turbines=Turbine_Count, diameter=7, slucies=0, sluice_size=80, profile=Count, time=60000, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+            
+                for Energy in Global_Power:
+                        #Global_Power_Elec.append(i*Eff_Turbine*Eff_Gearbox*Eff_Generator)
+                        Total_Mechanical_Energy += Energy
+                        
+                Power[Turbine_Count-1].append(Total_Mechanical_Energy)
+                Count += 1
+
+        plt.figure(figsize=plt.figaspect(1)*2)
+        ax = plt.axes()
+        plt.title("Energy Output Vs Sluice Gate Triggering Height")
+        ax.set_xlabel("Lagoon Triggering Height (m)")
+        ax.set_ylabel("Energy Output (J)")
+        
+        Count = 0
+        
+        for i in Power:
+            Temp = ax.plot(Triggers, Power[Count], label=("Turbines: " + str(Count+1)), linewidth=2)
+            Count += 1
+        
+        ax.legend()
+        plt.minorticks_on()
+        ax.grid(which='major', color='black', linestyle='-', linewidth=1)
+        ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
 
 def Print_Costs():
     print("Here are some costs")
@@ -449,10 +591,10 @@ def Tidal_Function_Testing(Interval=86400):     #Shows a graph of a desired tida
     
     for i in range(Interval):
         
-        Time.append(i*10)
+        Time.append(i)
         #Tide_Height.append(6*np.cos(2*np.pi*0.0000231*i-np.pi)+6)
         #FFT_Tidal_Function.append((3.68*np.sin(2*np.pi*(2.236e-5)*i*10))+(1.499*np.cos(2*np.pi*(2.315e-5)*i*10))+(0.73*np.cos(2*np.pi*(2.195e-5)*i*10))+(0.3581*np.sin(2*np.pi*(2.322e-5)*i*10)))
-        FFT_Tidal_Function.append((3.678*np.cos(2*np.pi*(2.236e-5)*i*10+(48.06*(np.pi/180))))+(1.4298*np.cos(2*np.pi*(2.239e-5)*i*10-(130.6*(np.pi/180))))+(1.4986*np.cos(2*np.pi*(2.315e-5)*i*10+(176.7*(np.pi/180))))+(0.7298*np.cos(2*np.pi*(2.194e-5)*i*10-(53.75*(np.pi/180)))))
+        FFT_Tidal_Function.append((3.678*np.cos(2*np.pi*(2.236e-5)*i+(48.06*(np.pi/180))))+(1.4298*np.cos(2*np.pi*(2.239e-5)*i-(130.6*(np.pi/180))))+(1.4986*np.cos(2*np.pi*(2.315e-5)*i+(176.7*(np.pi/180))))+(0.7298*np.cos(2*np.pi*(2.194e-5)*i-(53.75*(np.pi/180)))) + 6.278)
     
     plt.figure(figsize=plt.figaspect(1)*2)
     ax = plt.axes() #proj_type = 'ortho'
