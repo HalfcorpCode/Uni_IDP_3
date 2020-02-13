@@ -33,13 +33,19 @@ Global_Head_Loss = [0]
 Global_Power = [0]
 Global_Power_Elec = []
 
-Civil_Price = 60000000        #Guess
+Civil_Price = 274000000      #Good
 Blade_Price = 1500000        #Good    
-Turbine_Price = 2000000        #(Just guide vanes atm)
+Turbine_Price = 2000000      #(Just guide vanes atm)
 Gearbox_Price = 150000       #Good
-Generator_Price = 150000     #Check but should be good
-Electrical_Price = 100000    #Guess
+Generator_Price = 400000     #Good
+Electrical_Price = 473329    #Good
 Sluice_Price = 200000        #Good
+
+#Efficiency terms:
+    
+Eff_Turbine = 0.8
+Eff_Gearbox = 0.9
+Eff_Generator = 0.97
 
 #Main Program =================================================================
 
@@ -72,15 +78,10 @@ def Run_Simulation(**kwargs):
     Graph_QV = kwargs["graph_QV"]
     Graph_P = kwargs["graph_P"]
     
-    #Efficiency terms:
-    
-    Eff_Turbine = 0.85
-    Eff_Gearbox = 0.85
-    Eff_Generator = 0.97
-    
     #Global Variables
     
     global Civil_Price, Blade_Price, Turbine_Price, Gearbox_Price, Generator_Price, Sluice_Price
+    global Eff_Turbine, Eff_Gearbox, Eff_Generator
     global Global_Time, Global_Volume, Global_Tide, Global_Head, Global_Head_Difference, Global_Velocity, Global_Discharge, Global_Head_Loss, Global_Power, Global_Power_Elec
     Global_Time = [0]
     Global_Volume = [0]  
@@ -298,7 +299,7 @@ def Run_Simulation(**kwargs):
         print("\n================================================================")
         print("Running economic assessment of configuration...")
         
-        Startup_Costs = Civil_Price+(Turbines*(Blade_Price+Turbine_Price+Gearbox_Price+Generator_Price+Electrical_Price+(2*Sluice_Price)))+(Sluices*Sluice_Price)
+        Startup_Costs = Civil_Price+(Turbines*(Blade_Price+Turbine_Price+Gearbox_Price+(2*Sluice_Price)+Generator_Price+Electrical_Price))+(Sluices*Sluice_Price)
         Running_Costs_Day = 823 #a day
         Total_Running_Costs = Running_Costs_Day*(Run_Time/86400)
         Energy_Price = 50/1000 #per kWh
@@ -418,7 +419,7 @@ def Evaluate_Tidal_Function(Type, Time):
            
 def Optimize(Item):
 
-    global Global_Power, Profile_List
+    global Global_Power, Profile_List, Eff_Turbine, Eff_Gearbox, Eff_Generator
     
     if Item == "blade_size":
         
@@ -548,6 +549,39 @@ def Optimize(Item):
         plt.minorticks_on()
         ax.grid(which='major', color='black', linestyle='-', linewidth=1)
         ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
+        
+    elif Item == "Power":
+        
+        Power = [[],[]]
+        Per_Turbine = []
+        Turbines = np.arange(1,41,1)
+        
+        for Turbine in np.arange(1,41,1):
+            
+            Run_Simulation(step=10, tidal_function="sine", turbines=Turbine, diameter=7.5, slucies=0, sluice_size=80, profile=1, time=60000, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+            
+            Max_Mechanical_Power = max(Global_Power)
+            Max_Electrical_Power = (Max_Mechanical_Power*Eff_Turbine*Eff_Gearbox*Eff_Generator)
+                            
+            Power[0].append(Max_Mechanical_Power)
+            Power[1].append(Max_Electrical_Power)
+            Per_Turbine.append(Max_Electrical_Power/Turbine)
+            
+        plt.figure(figsize=plt.figaspect(1)*2)
+        ax = plt.axes()
+        plt.title("Max Power Output Vs Number of Turbines")
+        ax.set_xlabel("Number of Turbines")
+        ax.set_ylabel("Max Power Output (W)")
+        
+        Temp = ax.plot(Turbines, Power[0], label=("Mechanical Power"), color="gold", linewidth=2)
+        Temp2 = ax.plot(Turbines, Power[1], "--", label=("Electrical Power"), color="y", linewidth=2)
+        Temp2 = ax.plot(Turbines, Per_Turbine, "--", label=("Electrical Power"), color="red", linewidth=2)
+        
+        ax.legend()
+        plt.minorticks_on()
+        ax.grid(which='major', color='black', linestyle='-', linewidth=1)
+        ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
+
 
 def Print_Costs():
     print("Here are some costs")
