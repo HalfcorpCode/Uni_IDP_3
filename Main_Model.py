@@ -247,8 +247,8 @@ def Run_Simulation(**kwargs):
                         Global_Volume.append(Global_Volume[-1]-Step_Size*Area*Discharge_Coefficient*Global_Velocity[-1])
                         
                         Global_Discharge.append(Global_Velocity[-1]*Area*Discharge_Coefficient)
-                        Global_Head_Loss.append(0.5*Global_Velocity[-1])
-                        Global_Power.append((rho*G)*Global_Discharge[-1]*((Global_Volume[-1])/(M)-Global_Tide[-1]))
+                        Global_Head_Loss.append(((Global_Volume[-1])/(M)-Global_Tide[-1]-(Friction_Factor*(Draft_Length/Draft_Diameter)*(Global_Velocity[-1]**2/(2*G)))))
+                        Global_Power.append(rho*G*Global_Discharge[-1]*Global_Head_Loss[-1])
                     
                     Global_Head.append((Global_Volume[-1])/(M))
                     Global_Head_Difference.append(Global_Head[-1]-Global_Tide[-1])
@@ -257,9 +257,44 @@ def Run_Simulation(**kwargs):
         if State == 3:
             
             log.info("In state 3: Filling lagoon via energy generation")
-            #Check exit condition
-            #Break or increment tide and update lagoon volume
-            #NEED EQUATION FOR THIS
+                
+            while State == 3:
+                
+                if Current_Time > Run_Time:
+                    State = 5
+                    log.info("Runtime elapsed")
+                elif Global_Head[-1] > Operational_Profile[Profile_Stage][1]:
+                    Profile_Stage = (Profile_Stage+1)%Total_Stages
+                    State = Operational_Profile[Profile_Stage][0]  
+                else:
+                
+                    Global_Time.append(Current_Time)
+                    Global_Tide.append(Evaluate_Tidal_Function(Tidal_Function, Current_Time))
+                    #Global_Volume.append(Global_Volume[Current_Time-1]+Step_Size*Sluice_Area*Sluicing_Discharge_Coefficient*np.sqrt(2*G)*np.sqrt(Global_Tide[Current_Time]-((Global_Volume[Current_Time-1])/(M))-Pipe_Loss))
+                    
+                    if (Global_Tide[-1])-((Global_Volume[-1])/(M)) < 0:
+                        log.info("WARNING: Target value of " + str(Operational_Profile[Profile_Stage][1]) + "m in state 1 could not be met!")
+                        Global_Volume.append(Global_Volume[-1])
+                        Profile_Stage = (Profile_Stage+1)%Total_Stages
+                        State = Operational_Profile[Profile_Stage][0]
+                        Global_Velocity.append(Global_Velocity[-1])
+                        Global_Discharge.append(Global_Discharge[-1])
+                        Global_Head_Loss.append(Global_Head_Loss[-1])
+                        Global_Power.append(Global_Power[-1])
+                    else:    
+                        #Global_Volume.append(Global_Volume[-1]+Step_Size*Sluice_Area*Sluicing_Discharge_Coefficient*np.sqrt(2*G)*np.sqrt((Global_Tide[-1])-((Global_Volume[-1])/(M))-Pipe_Loss))
+                        #Global_Velocity.append(np.sqrt(2*G)*np.sqrt((Global_Tide[-1])-((Global_Volume[-1])/(M))-Pipe_Loss))
+                        
+                        Global_Velocity.append(np.sqrt((2*G*((Global_Tide[-1])-(Global_Volume[-1])/(M))*(1-Eff_Turbine))/(1-Eff_Turbine*Friction_Factor*(Draft_Length/Draft_Diameter))))
+                        Global_Volume.append(Global_Volume[-1]+Step_Size*Area*Discharge_Coefficient*Global_Velocity[-1])
+                        
+                        Global_Discharge.append(Global_Velocity[-1]*Area*Discharge_Coefficient)
+                        Global_Head_Loss.append(Global_Tide[-1]-((Global_Volume[-1])/(M))-(Friction_Factor*(Draft_Length/Draft_Diameter)*(Global_Velocity[-1]**2/(2*G))))
+                        Global_Power.append(rho*G*Global_Discharge[-1]*Global_Head_Loss[-1])
+                    
+                    Global_Head.append((Global_Volume[-1])/(M))
+                    Global_Head_Difference.append(Global_Head[-1]-Global_Tide[-1])
+                    Current_Time += Step_Size
             
         if State == 4:
             
@@ -519,6 +554,7 @@ def Optimize(Item):
             Power.append([])
             Profile_List = []
             Turbine_Count += 1
+            Count = 1
             
             for i in np.arange(12,-1,-0.5):
                 
