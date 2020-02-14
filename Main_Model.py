@@ -299,9 +299,28 @@ def Run_Simulation(**kwargs):
         if State == 4:
             
             log.info("In state 4: Draining lagoon via sluicing")
-            #Check exit condition
-            #Break or increment tide and update lagoon volume
-            #NEED EQUATION FOR THIS
+            
+            while State == 4:
+                
+                if Current_Time > Run_Time:
+                    State = 5
+                    log.info("Runtime elapsed")
+                elif Global_Tide[-1] > Operational_Profile[Profile_Stage][1]: 
+                    Profile_Stage = (Profile_Stage+1)%Total_Stages
+                    State = Operational_Profile[Profile_Stage][0]
+                else:
+                    Global_Time.append(Current_Time)
+                    Global_Tide.append(Evaluate_Tidal_Function(Tidal_Function, Current_Time))
+                    Global_Volume.append(Global_Volume[-1])
+                    Global_Head.append((Global_Volume[-1])/(M))
+                    Global_Head_Difference.append(Global_Head[-1]-Global_Tide[-1])
+                    Global_Velocity.append(0)
+                    Global_Discharge.append(0)
+                    Global_Head_Loss.append(0)
+                    Global_Power.append(0)
+                    Current_Time += Step_Size
+        
+        
         log.info("Current time: " + str(Current_Time))    
     
     print("\nSimulation complete\n")
