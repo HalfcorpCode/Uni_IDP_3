@@ -471,7 +471,7 @@ def Evaluate_Tidal_Function(Type, Time):
         Time += 14000
         return ( (3.678*np.cos(2*np.pi*(2.236e-5)*Time+(48.06*(np.pi/180)))) + (1.4298*np.cos(2*np.pi*(2.239e-5)*Time-(130.6*(np.pi/180)))) + (1.4986*np.cos(2*np.pi*(2.315e-5)*Time+(176.7*(np.pi/180)))) + (0.7298*np.cos(2*np.pi*(2.194e-5)*Time-(53.75*(np.pi/180)))) + 6.278)
            
-def Optimize(Item):
+def Optimize(Item, Mode):
 
     global Global_Power, Profile_List, Eff_Turbine, Eff_Gearbox, Eff_Generator
     
@@ -479,10 +479,15 @@ def Optimize(Item):
         
         Power = []
         Diameters = np.arange(1,12.5,0.5)
+        Profile_List = []
     
         print("Calculating blade diameter optimization")
-        Setup_Profile([[1,12],[0,5],[2,0]])
         
+        if Mode == "single": 
+            Setup_Profile([[1,12],[0,5],[2,0]])
+        elif Mode == "double":
+            Setup_Profile([[3,14],[0,5],[2,0],[4,7]])
+            
         for Turbine in np.arange(1,21,1):
 
             Power.append([])
@@ -490,11 +495,15 @@ def Optimize(Item):
             for Diameter in np.arange(1,12.5,0.5):
                 
                 Total_Mechanical_Energy = 0
-                Run_Simulation(step=10, tidal_function="sine", turbines=Turbine, diameter=Diameter, slucies=0, sluice_size=80, profile=1, time=60000, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+                Run_Simulation(step=10, tidal_function="sine", turbines=Turbine, diameter=Diameter, slucies=0, sluice_size=80, profile=1, time=76000, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+               
+                Cut_Count = 0
                 
                 for Energy in Global_Power:
-                    #Global_Power_Elec.append(i*Eff_Turbine*Eff_Gearbox*Eff_Generator)
-                    Total_Mechanical_Energy += Energy
+                    
+                    if Cut_Count > 3200:
+                        Total_Mechanical_Energy += Energy
+                    Cut_Count += 1
                     
                 Power[Turbine-1].append(Total_Mechanical_Energy)
 
@@ -519,11 +528,17 @@ def Optimize(Item):
     elif Item == "turbine_number":
         
         Power = []
-        Turbines = np.arange(1,21,1)
+        Turbines = np.arange(1,31,1)
         Diameters = np.arange(1,12.5,0.5)
+        Profile_List = []
     
         print("Calculating turbine number optimization")
-        Setup_Profile([[1,12],[0,5],[2,0]])
+    
+        if Mode == "single": 
+            Setup_Profile([[1,12],[0,5],[2,0]])
+        elif Mode == "double":
+            Setup_Profile([[3,14],[0,5],[2,0],[4,7]])
+    
         Count = 0
         
         for Diameter in np.arange(1,12.5,0.5):
@@ -531,10 +546,10 @@ def Optimize(Item):
             Power.append([])
             Count += 1
             
-            for Turbine in np.arange(1,21,1):
+            for Turbine in np.arange(1,31,1):
                 
                 Total_Mechanical_Energy = 0
-                Run_Simulation(step=10, tidal_function="sine", turbines=Turbine, diameter=Diameter, slucies=0, sluice_size=80, profile=1, time=60000, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+                Run_Simulation(step=10, tidal_function="sine", turbines=Turbine, diameter=Diameter, slucies=0, sluice_size=80, profile=1, time=76000, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
                 
                 for Energy in Global_Power:
                     #Global_Power_Elec.append(i*Eff_Turbine*Eff_Gearbox*Eff_Generator)
