@@ -33,13 +33,16 @@ Global_Head_Loss = [0]
 Global_Power = [0]
 Global_Power_Elec = []
 
-Civil_Price = 274000000      #Good
+Civil_Price = 127200000      #Good
 Blade_Price = 1500000        #Good    
 Turbine_Price = 2000000      #(Just guide vanes atm)
-Gearbox_Price = 150000       #Good
+Gearbox_Price = 116620       #Good
 Generator_Price = 400000     #Good
 Electrical_Price = 473329    #Good
 Sluice_Price = 200000        #Good
+
+Startup_Cost = 0
+Payback_Time = 0
 
 #Efficiency terms:
     
@@ -80,7 +83,7 @@ def Run_Simulation(**kwargs):
     
     #Global Variables
     
-    global Civil_Price, Blade_Price, Turbine_Price, Gearbox_Price, Generator_Price, Sluice_Price
+    global Civil_Price, Blade_Price, Turbine_Price, Gearbox_Price, Generator_Price, Sluice_Price, Startup_Cost, Payback_Time
     global Eff_Turbine, Eff_Gearbox, Eff_Generator
     global Global_Time, Global_Volume, Global_Tide, Global_Head, Global_Head_Difference, Global_Velocity, Global_Discharge, Global_Head_Loss, Global_Power, Global_Power_Elec
     Global_Time = [0]
@@ -353,43 +356,40 @@ def Run_Simulation(**kwargs):
         print("\n================================================================")
         print("Running economic assessment of configuration...")
         
-        Startup_Costs = Civil_Price+(Turbines*(Blade_Price+Turbine_Price+Gearbox_Price+(2*Sluice_Price)+Generator_Price+Electrical_Price))+(Sluices*Sluice_Price)
+        Startup_Cost = Civil_Price+(Turbines*(Blade_Price+Turbine_Price+Gearbox_Price+(2*Sluice_Price)+Generator_Price+Electrical_Price))+(Sluices*Sluice_Price)
         Running_Costs_Day = 823 #a day
         Total_Running_Costs = Running_Costs_Day*(Run_Time/86400)
         Energy_Price = 50/1000 #per kWh
         Turnover = (Total_Electrical_Energy/(3.6e+6))*Energy_Price
         Gross_Profit = Turnover-Total_Running_Costs
-        Net_Profit = Gross_Profit-Startup_Costs
-        Payback_Time = Startup_Costs/Gross_Profit
+        Net_Profit = Gross_Profit-Startup_Cost
+        Payback_Time = Startup_Cost/Gross_Profit
         
-        Total_Costs_Gradient = (Total_Running_Costs)
-        #Total_Costs_Equation = Total_Running_Costs*x + Startup_Costs
-        Revenue_Gradient = Turnover
-        #Revenue_Equation = Turnover*x
-        
-        print("Startup costs: " + str(Startup_Costs))
+        print("Startup costs: " + str(Startup_Cost))
         print("Running costs: " + str(Total_Running_Costs))
         print("Turnover: " + str(Turnover))
         print("Gross profit: " + str(Gross_Profit))
         print("Net profit: " + str(Net_Profit))
         print("Pay back time in years: " + str(Payback_Time))
         
-        plt.figure(figsize=plt.figaspect(1)*2)
-        ax = plt.axes()
-        plt.title("Break-Even Analysis")
-        ax.set_xlabel("Time (Years)")
-        ax.set_ylabel("Equity (£)")
-            
-        Fixed_Costs_Plot = ax.plot([0,Payback_Time,2*Payback_Time], [Startup_Costs, Startup_Costs, Startup_Costs], "--", label="Fixed costs", color="red", linewidth=3)
-        Total_Costs_Plot = ax.plot([0,Payback_Time,2*Payback_Time], [Startup_Costs, (Total_Running_Costs*Payback_Time + Startup_Costs), (Total_Running_Costs*Payback_Time*2 + Startup_Costs)], "--", label="Total costs", color="darkred", linewidth=3)
-        Revenue_Plot = ax.plot([0,Payback_Time,2*Payback_Time], [0, (Turnover*Payback_Time), (Turnover*Payback_Time*2)], label="Revenue", color="blue", linewidth=3)
+        if Graphs == True:
         
-        Lines = Fixed_Costs_Plot+Total_Costs_Plot+Revenue_Plot
-        Labels =[l.get_label() for l in Lines]
-        ax.legend(Lines, Labels)
-        plt.minorticks_on()
-        ax.grid(which='major', color='black', linestyle='-', linewidth=1)
-        ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
+            plt.figure(figsize=plt.figaspect(1)*2)
+            ax = plt.axes()
+            plt.title("Break-Even Analysis")
+            ax.set_xlabel("Time (Years)")
+            ax.set_ylabel("Equity (£)")
+        
+            Fixed_Costs_Plot = ax.plot([0,Payback_Time,2*Payback_Time], [Startup_Cost, Startup_Cost, Startup_Cost], "--", label="Fixed costs", color="red", linewidth=3)
+            Total_Costs_Plot = ax.plot([0,Payback_Time,2*Payback_Time], [Startup_Cost, (Total_Running_Costs*Payback_Time + Startup_Cost), (Total_Running_Costs*Payback_Time*2 + Startup_Cost)], "--", label="Total costs", color="darkred", linewidth=3)
+            Revenue_Plot = ax.plot([0,Payback_Time,2*Payback_Time], [0, (Turnover*Payback_Time), (Turnover*Payback_Time*2)], label="Revenue", color="blue", linewidth=3)
+            
+            Lines = Fixed_Costs_Plot+Total_Costs_Plot+Revenue_Plot
+            Labels =[l.get_label() for l in Lines]
+            ax.legend(Lines, Labels)
+            plt.minorticks_on()
+            ax.grid(which='major', color='black', linestyle='-', linewidth=1)
+            ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
         
     #Take into account maintencance downtimes
     
@@ -473,7 +473,7 @@ def Evaluate_Tidal_Function(Type, Time):
            
 def Optimize(Item, Mode):
 
-    global Global_Power, Profile_List, Eff_Turbine, Eff_Gearbox, Eff_Generator
+    global Global_Power, Profile_List, Eff_Turbine, Eff_Gearbox, Eff_Generator, Startup_Cost, Payback_Time
     
     if Item == "blade_size":
         
@@ -549,7 +549,7 @@ def Optimize(Item, Mode):
             for Turbine in np.arange(1,31,1):
                 
                 Total_Mechanical_Energy = 0
-                Run_Simulation(step=10, tidal_function="sine", turbines=Turbine, diameter=Diameter, slucies=0, sluice_size=80, profile=1, time=76000, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+                Run_Simulation(step=100, tidal_function="Newport_1", turbines=Turbine, diameter=Diameter, slucies=0, sluice_size=80, profile=1, time=60*60*24*365, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
                 
                 for Energy in Global_Power:
                     #Global_Power_Elec.append(i*Eff_Turbine*Eff_Gearbox*Eff_Generator)
@@ -559,7 +559,12 @@ def Optimize(Item, Mode):
 
         plt.figure(figsize=plt.figaspect(1)*2)
         ax = plt.axes()
-        plt.title("Energy Output Vs Number of Turbines For Different Blasde Diameters")
+        
+        if Mode == "single": 
+            plt.title("Energy Output Vs Number of Turbines For Different Blade Diameters In Single Effect Mode (Newport Tidal Data)")
+        elif Mode == "double":
+            plt.title("Energy Output Vs Number of Turbines For Different Blade Diameters In Double Effect Mode (Newport Tidal Data)")
+            
         ax.set_xlabel("Number of Turbines")
         ax.set_ylabel("Energy Output (J)")
         
@@ -620,7 +625,7 @@ def Optimize(Item, Mode):
         ax.grid(which='major', color='black', linestyle='-', linewidth=1)
         ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
         
-    elif Item == "Power":
+    elif Item == "power":
         
         Power = [[],[]]
         Per_Turbine = []
@@ -651,7 +656,37 @@ def Optimize(Item, Mode):
         plt.minorticks_on()
         ax.grid(which='major', color='black', linestyle='-', linewidth=1)
         ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
+        
+    elif Item == "payback":
+    
+        Profile_List = []
+        Turbines = np.arange(3,41,1)
+        Startup_Costs = []
+        Payback_Times = []
+        
+        if Mode == "single": 
+            Setup_Profile([[1,12],[0,5],[2,0]])
+        elif Mode == "double":
+            Setup_Profile([[3,14],[0,5],[2,0],[4,7]])
+            
+        for Turbine in Turbines:
+            
+            Run_Simulation(step=100, tidal_function="Newport_1", turbines=Turbine, diameter=5.32, slucies=0, sluice_size=80, profile=1, time=60*60*24*365, econ=True, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+            Startup_Costs.append(Startup_Cost)
+            Payback_Times.append(Payback_Time)
 
+        plt.figure(figsize=plt.figaspect(1)*2)
+        ax = plt.axes()
+        plt.title("Number of Turbines Vs Payback Time")
+        ax.set_xlabel("Number of Turbines")
+        ax.set_ylabel("Payback Time (Years)")
+        
+        Temp = ax.plot(Turbines, Payback_Times, label=("Diameter: 7.5m"), color="blue", linewidth=2)
+        
+        ax.legend()
+        plt.minorticks_on()
+        ax.grid(which='major', color='black', linestyle='-', linewidth=1)
+        ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
 
 def Print_Costs():
     print("Here are some costs")
