@@ -159,14 +159,15 @@ def Plot_Volume_Height(approx=False):
     plt.title("Volume vs Ocean Height of Lagoon")
     ax.set_xlabel("Height (m)")
     ax.set_ylabel(r'Volume ($m^3$)')
-    ax.plot(Heights, Volumes)
+    ax.plot(Heights, Volumes, label="Volume height profile")
     plt.minorticks_on()
     ax.grid(which='major', color='black', linestyle='-', linewidth=1)
     ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
     
     if approx == True:
-        ax.plot([0,13], [0, 18891820])
-
+        ax.plot([0,13], [0, 18891820], label="Linear approximation")
+    
+    ax.legend()
     
 def Integrate_Element(Surface, Height, View, Tet, Log):
     

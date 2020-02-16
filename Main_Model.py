@@ -147,6 +147,8 @@ def Run_Simulation(**kwargs):
     print("\nRunning simulation...\n")
     
     State = Operational_Profile[0][0]
+    Average_Head = 0
+    AH_Count = 0
     
     while Current_Time < Run_Time:
         
@@ -256,6 +258,9 @@ def Run_Simulation(**kwargs):
                     Global_Head.append((Global_Volume[-1])/(M))
                     Global_Head_Difference.append(Global_Head[-1]-Global_Tide[-1])
                     Current_Time += Step_Size
+                    
+                    Average_Head += abs(Global_Head_Difference[-1])
+                    AH_Count += 1
             
         if State == 3:
             
@@ -298,10 +303,13 @@ def Run_Simulation(**kwargs):
                     Global_Head.append((Global_Volume[-1])/(M))
                     Global_Head_Difference.append(Global_Head[-1]-Global_Tide[-1])
                     Current_Time += Step_Size
+                    
+                    Average_Head += abs(Global_Head_Difference[-1])
+                    AH_Count += 1
             
         if State == 4:
             
-            log.info("In state 4: Draining lagoon via sluicing")
+            log.info("In state 4: Waiting for tidal shift")
             
             while State == 4:
                 
@@ -323,10 +331,12 @@ def Run_Simulation(**kwargs):
                     Global_Power.append(0)
                     Current_Time += Step_Size
         
-        
         log.info("Current time: " + str(Current_Time))    
     
+    Average_Head = (Average_Head/AH_Count)
+    
     print("\nSimulation complete\n")
+    print("Average head difference across turbine: " + str(Average_Head))
     
     #Energy generation calculations
     print("\n================================================================")
@@ -337,7 +347,7 @@ def Run_Simulation(**kwargs):
         if np.isnan(Power) == True:
             Power = 0
             
-        Global_Power_Elec.append(Power*Eff_Turbine*Eff_Gearbox*Eff_Generator)
+        Global_Power_Elec.append(Power*Eff_Gearbox*Eff_Generator)
         Total_Mechanical_Energy += int(Power*Step_Size)
         Total_Electrical_Energy += int(Global_Power_Elec[-1]*Step_Size)
 
@@ -495,21 +505,18 @@ def Optimize(Item, Mode):
             for Diameter in np.arange(1,12.5,0.5):
                 
                 Total_Mechanical_Energy = 0
-                Run_Simulation(step=10, tidal_function="sine", turbines=Turbine, diameter=Diameter, slucies=0, sluice_size=80, profile=1, time=76000, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+                Run_Simulation(step=100, tidal_function="Newport_1", turbines=Turbine, diameter=Diameter, slucies=0, sluice_size=80, profile=1, time=60*60*24*365, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
                
                 Cut_Count = 0
                 
-                for Energy in Global_Power:
-                    
-                    if Cut_Count > 3200:
-                        Total_Mechanical_Energy += Energy
-                    Cut_Count += 1
+                for Energy in Global_Power: 
+                    Total_Mechanical_Energy += Energy*100
                     
                 Power[Turbine-1].append(Total_Mechanical_Energy)
 
         plt.figure(figsize=plt.figaspect(1)*2)
         ax = plt.axes()
-        plt.title("Energy Output Vs Blade Diameter For Different Number of Turbines")
+        plt.title("Energy Output Vs Blade Diameter For Different Number of Turbines In Single Effect Mode (Newport Tidal Data)")
         ax.set_xlabel("Blade Diameter (m)")
         ax.set_ylabel("Energy Output (J)")
         
@@ -553,7 +560,7 @@ def Optimize(Item, Mode):
                 
                 for Energy in Global_Power:
                     #Global_Power_Elec.append(i*Eff_Turbine*Eff_Gearbox*Eff_Generator)
-                    Total_Mechanical_Energy += Energy
+                    Total_Mechanical_Energy += Energy*100
                     
                 Power[Count-1].append(Total_Mechanical_Energy)
 
@@ -633,10 +640,10 @@ def Optimize(Item, Mode):
         
         for Turbine in np.arange(1,41,1):
             
-            Run_Simulation(step=10, tidal_function="sine", turbines=Turbine, diameter=7.5, slucies=0, sluice_size=80, profile=1, time=60000, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+            Run_Simulation(step=100, tidal_function="Newport_1", turbines=Turbine, diameter=7.5, slucies=0, sluice_size=80, profile=1, time=60*60*24*365, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
             
             Max_Mechanical_Power = max(Global_Power)
-            Max_Electrical_Power = (Max_Mechanical_Power*Eff_Turbine*Eff_Gearbox*Eff_Generator)
+            Max_Electrical_Power = (Max_Mechanical_Power*Eff_Gearbox*Eff_Generator)
                             
             Power[0].append(Max_Mechanical_Power)
             Power[1].append(Max_Electrical_Power)
@@ -650,7 +657,7 @@ def Optimize(Item, Mode):
         
         Temp = ax.plot(Turbines, Power[0], label=("Mechanical Power"), color="gold", linewidth=2)
         Temp2 = ax.plot(Turbines, Power[1], "--", label=("Electrical Power"), color="y", linewidth=2)
-        Temp2 = ax.plot(Turbines, Per_Turbine, "--", label=("Electrical Power"), color="red", linewidth=2)
+        Temp2 = ax.plot(Turbines, Per_Turbine, "--", label=("Electrical Power Per Turbine"), color="red", linewidth=2)
         
         ax.legend()
         plt.minorticks_on()
@@ -671,7 +678,7 @@ def Optimize(Item, Mode):
             
         for Turbine in Turbines:
             
-            Run_Simulation(step=100, tidal_function="Newport_1", turbines=Turbine, diameter=5.32, slucies=0, sluice_size=80, profile=1, time=60*60*24*365, econ=True, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+            Run_Simulation(step=100, tidal_function="Newport_1", turbines=Turbine, diameter=7.5, slucies=0, sluice_size=80, profile=1, time=60*60*24*365, econ=True, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
             Startup_Costs.append(Startup_Cost)
             Payback_Times.append(Payback_Time)
 
