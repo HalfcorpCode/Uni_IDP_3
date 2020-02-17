@@ -149,6 +149,8 @@ def Run_Simulation(**kwargs):
     State = Operational_Profile[0][0]
     Average_Head = 0
     AH_Count = 0
+    Runtime = 0
+    Flow_Rate_Average = 0
     
     while Current_Time < Run_Time:
         
@@ -261,6 +263,9 @@ def Run_Simulation(**kwargs):
                     
                     Average_Head += abs(Global_Head_Difference[-1])
                     AH_Count += 1
+                    if Current_Time > 50000: 
+                        Runtime += 1*Step_Size
+                    Flow_Rate_Average += Global_Discharge[-1]
             
         if State == 3:
             
@@ -306,6 +311,9 @@ def Run_Simulation(**kwargs):
                     
                     Average_Head += abs(Global_Head_Difference[-1])
                     AH_Count += 1
+                    if Current_Time > 50000: 
+                        Runtime += 1*Step_Size
+                    Flow_Rate_Average += Global_Discharge[-1]
             
         if State == 4:
             
@@ -334,9 +342,14 @@ def Run_Simulation(**kwargs):
         log.info("Current time: " + str(Current_Time))    
     
     Average_Head = (Average_Head/AH_Count)
+    Flow_Rate_Average = (Flow_Rate_Average/AH_Count)
+    
+    #50000 start offset, run for 86400
     
     print("\nSimulation complete\n")
     print("Average head difference across turbine: " + str(Average_Head))
+    print("Run time: " + str(Runtime))
+    print("Average discharge: " + str(Flow_Rate_Average))
     
     #Energy generation calculations
     print("\n================================================================")
@@ -678,7 +691,7 @@ def Optimize(Item, Mode):
             
         for Turbine in Turbines:
             
-            Run_Simulation(step=100, tidal_function="Newport_1", turbines=Turbine, diameter=7.5, slucies=0, sluice_size=80, profile=1, time=60*60*24*365, econ=True, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+            Run_Simulation(step=100, tidal_function="Newport_1", turbines=Turbine, diameter=5.88, slucies=0, sluice_size=80, profile=1, time=60*60*24*365, econ=True, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
             Startup_Costs.append(Startup_Cost)
             Payback_Times.append(Payback_Time)
 
@@ -688,7 +701,7 @@ def Optimize(Item, Mode):
         ax.set_xlabel("Number of Turbines")
         ax.set_ylabel("Payback Time (Years)")
         
-        Temp = ax.plot(Turbines, Payback_Times, label=("Diameter: 7.5m"), color="blue", linewidth=2)
+        Temp = ax.plot(Turbines, Payback_Times, label=("Diameter: 5.88m"), color="blue", linewidth=2)
         
         ax.legend()
         plt.minorticks_on()
