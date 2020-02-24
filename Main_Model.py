@@ -33,11 +33,12 @@ Global_Head_Loss = [0]
 Global_Power = [0]
 Global_Power_Elec = []
 
-Civil_Price = 127200000      #Good
+Civil_Price = 143400000      #Good
 Blade_Price = 1500000        #Good    
 Turbine_Price = 2000000      #(Just guide vanes atm)
-Gearbox_Price = 116620       #Good
-Generator_Price = 400000     #Good
+Shaft_Price = 200000         #Good
+Gearbox_Price = 134352       #Good
+Generator_Price = 250000     #Good
 Electrical_Price = 473329    #Good
 Sluice_Price = 200000        #Good
 
@@ -151,6 +152,7 @@ def Run_Simulation(**kwargs):
     AH_Count = 0
     Runtime = 0
     Flow_Rate_Average = 0
+    Max_Head = []
     
     while Current_Time < Run_Time:
         
@@ -262,6 +264,7 @@ def Run_Simulation(**kwargs):
                     Current_Time += Step_Size
                     
                     Average_Head += abs(Global_Head_Difference[-1])
+                    Max_Head.append(abs(Global_Head_Difference[-1]))
                     AH_Count += 1
                     if Current_Time > 50000: 
                         Runtime += 1*Step_Size
@@ -310,6 +313,7 @@ def Run_Simulation(**kwargs):
                     Current_Time += Step_Size
                     
                     Average_Head += abs(Global_Head_Difference[-1])
+                    Max_Head.append(abs(Global_Head_Difference[-1]))
                     AH_Count += 1
                     if Current_Time > 50000: 
                         Runtime += 1*Step_Size
@@ -347,9 +351,11 @@ def Run_Simulation(**kwargs):
     #50000 start offset, run for 86400
     
     print("\nSimulation complete\n")
-    print("Average head difference across turbine: " + str(Average_Head))
+    print("Average head difference across turbines: " + str(Average_Head))
+    print("Max head difference across turbines: " + str(max(Max_Head)))
     print("Run time: " + str(Runtime))
     print("Average discharge: " + str(Flow_Rate_Average))
+    
     
     #Energy generation calculations
     print("\n================================================================")
@@ -379,10 +385,10 @@ def Run_Simulation(**kwargs):
         print("\n================================================================")
         print("Running economic assessment of configuration...")
         
-        Startup_Cost = Civil_Price+(Turbines*(Blade_Price+Turbine_Price+Gearbox_Price+(2*Sluice_Price)+Generator_Price+Electrical_Price))+(Sluices*Sluice_Price)
+        Startup_Cost = Civil_Price+(Turbines*(Blade_Price+Shaft_Price+Turbine_Price+Gearbox_Price+(2*Sluice_Price)+Generator_Price+Electrical_Price))+(Sluices*Sluice_Price)
         Running_Costs_Day = 823 #a day
         Total_Running_Costs = Running_Costs_Day*(Run_Time/86400)
-        Energy_Price = 50/1000 #per kWh
+        Energy_Price = 92.5/1000 #per kWh
         Turnover = (Total_Electrical_Energy/(3.6e+6))*Energy_Price
         Gross_Profit = Turnover-Total_Running_Costs
         Net_Profit = Gross_Profit-Startup_Cost
@@ -422,10 +428,10 @@ def Run_Simulation(**kwargs):
         
         ax = plt.axes()
         second_ax = ax.twinx()
-        plt.title("Lagoon Volume, Head and Tide Vs Time")
+        plt.title("Lagoon Volume, Lagoon Height and Tide Height Vs Time (Double Effect)")
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Volume (m^3)")
-        second_ax.set_ylabel('Elevation (m)')
+        second_ax.set_ylabel('Height (m)')
        
         Filling_Plot = ax.plot(Global_Time, Global_Volume, label="Lagoon Volume", color="deepskyblue", linewidth=3)
         Lagoon_Head_Plot = second_ax.plot(Global_Time, Global_Head, "--", label="Lagoon head", color="green", linewidth=2)
@@ -604,22 +610,24 @@ def Optimize(Item, Mode):
         
         Profile_List = []
         Power = []
-        Triggers = np.arange(12,-1,-0.5)
+        Triggers = np.arange(13,-1,-0.5)
+        for i in range(len(Triggers)):
+            Triggers[i] = (Triggers[i]/13)*100
         Count = 1
         Turbine_Count = 0
         
-        for Turbines in np.arange(1,21,1):
+        for Turbines in np.arange(1,26,1):
         
             Power.append([])
             Profile_List = []
             Turbine_Count += 1
             Count = 1
             
-            for i in np.arange(12,-1,-0.5):
+            for i in np.arange(13,-1,-0.5):
                 
                 Total_Mechanical_Energy = 0
-                Setup_Profile([[1,12],[0,i],[2,0]])
-                Run_Simulation(step=10, tidal_function="sine", turbines=Turbine_Count, diameter=7, slucies=0, sluice_size=80, profile=Count, time=60000, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+                Setup_Profile([[3,14],[0,i],[2,0],[4,0]])
+                Run_Simulation(step=100, tidal_function="sine", turbines=Turbine_Count, diameter=5.87, slucies=0, sluice_size=80, profile=Count, time=150000, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
             
                 for Energy in Global_Power:
                         #Global_Power_Elec.append(i*Eff_Turbine*Eff_Gearbox*Eff_Generator)
@@ -630,8 +638,8 @@ def Optimize(Item, Mode):
 
         plt.figure(figsize=plt.figaspect(1)*2)
         ax = plt.axes()
-        plt.title("Energy Output Vs Sluice Gate Triggering Height")
-        ax.set_xlabel("Lagoon Triggering Height (m)")
+        plt.title("Energy Output Vs Sluice Gate Triggering Height (Double Effect)")
+        ax.set_xlabel("Lagoon Triggering Height as (Percentage of Tidal Range)")
         ax.set_ylabel("Energy Output (J)")
         
         Count = 0
@@ -653,7 +661,7 @@ def Optimize(Item, Mode):
         
         for Turbine in np.arange(1,41,1):
             
-            Run_Simulation(step=100, tidal_function="Newport_1", turbines=Turbine, diameter=7.5, slucies=0, sluice_size=80, profile=1, time=60*60*24*365, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+            Run_Simulation(step=100, tidal_function="Newport_1", turbines=Turbine, diameter=5.87, slucies=0, sluice_size=80, profile=1, time=60*60*24*365, econ=False, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
             
             Max_Mechanical_Power = max(Global_Power)
             Max_Electrical_Power = (Max_Mechanical_Power*Eff_Gearbox*Eff_Generator)
@@ -691,7 +699,7 @@ def Optimize(Item, Mode):
             
         for Turbine in Turbines:
             
-            Run_Simulation(step=100, tidal_function="Newport_1", turbines=Turbine, diameter=5.88, slucies=0, sluice_size=80, profile=1, time=60*60*24*365, econ=True, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
+            Run_Simulation(step=100, tidal_function="Newport_1", turbines=Turbine, diameter=5.87, slucies=0, sluice_size=80, profile=1, time=60*60*24*365, econ=True, output=False, graphs=False, graph_head=False, graph_QV=False, graph_P=False)
             Startup_Costs.append(Startup_Cost)
             Payback_Times.append(Payback_Time)
 
@@ -701,7 +709,7 @@ def Optimize(Item, Mode):
         ax.set_xlabel("Number of Turbines")
         ax.set_ylabel("Payback Time (Years)")
         
-        Temp = ax.plot(Turbines, Payback_Times, label=("Diameter: 5.88m"), color="blue", linewidth=2)
+        Temp = ax.plot(Turbines, Payback_Times, label=("Diameter: 5.87m"), color="blue", linewidth=2)
         
         ax.legend()
         plt.minorticks_on()
