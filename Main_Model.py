@@ -57,9 +57,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 log = logging.getLogger()
 log.setLevel(logging.WARNING)
 
-Setup_Profile([[1,12],[0,5],[2,0]])
-Setup_Profile([[3,14],[0,5],[2,0],[4,7]])
-
 print("\n")
 print("======================================================================")
 print("IDP 3 Group 9: Tidal Lagoon Mathematical Model and Simulation Software")
@@ -877,14 +874,15 @@ State 4 - The lagoon is draining WITHOUT generating electricity.\n")
         
         print("Help simulation:")
         print("\nTo run a simulation, run the following function call and changes the parameters as you desire: \n")
-        print('Run_Simulation(step=100, tidal_function="Newport_1", turbines=25, diameter=5.88, slucies=0, sluice_size=80, profile=2, time=60*60*24*365, econ=True, output=False, graphs=True, graph_head=False, graph_QV=True, graph_P=True))')
+        print('Run_Simulation(step=100, tidal_function="Newport_1", turbines=25, diameter=5.88, slucies=0, sluice_size=80, profile=2, time=60*60*24*365, econ=True, output=False, graphs=True, graph_head=True, graph_QV=True, graph_P=True))')
         print("\nThe above command executes a simulation using our final lagoon configuration over the course of a year. Alternativly, you can change the tidal_function parameter to 'sine', the time (in seconds) to a diffrerent amount and any other numerical value to what you want to test. The final boolen parameters are used to toggle the display opf certain graphs as well as debug information to the console. Make sure you have setup a profile for your simulation run or use one of the two built in (profiles 1 or 2).")
             
     else:
         
         print("Help command unknown, are you sure you typed it correctly?")
         
-        
+Setup_Profile([[1,12],[0,5],[2,0]])
+Setup_Profile([[3,14],[0,5],[2,0],[4,7]])        
         
         
         
