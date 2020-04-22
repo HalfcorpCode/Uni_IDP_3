@@ -351,10 +351,10 @@ def Run_Simulation(**kwargs):
     #50000 start offset, run for 86400
     
     print("\nSimulation complete\n")
-    print("Average head difference across turbines: " + str(Average_Head))
-    print("Max head difference across turbines: " + str(max(Max_Head)))
-    print("Run time: " + str(Runtime))
-    print("Average discharge: " + str(Flow_Rate_Average))
+    print("Average head difference across turbines (m): " + str(Average_Head))
+    print("Max head difference across turbines (m): " + str(max(Max_Head)))
+    print("Run time (s): " + str(Runtime))
+    print("Average discharge (m^3s^-1): " + str(Flow_Rate_Average))
     
     
     #Energy generation calculations
@@ -372,8 +372,8 @@ def Run_Simulation(**kwargs):
 
     Energy_Lost = Total_Mechanical_Energy-Total_Electrical_Energy
     Efficiency = (Eff_Turbine*Eff_Gearbox*Eff_Generator)
-    print("Total mechanical energy generated: " + str(Total_Mechanical_Energy))
-    print("Energy lost: " + str(Energy_Lost))
+    print("Total mechanical energy generated (J): " + str(Total_Mechanical_Energy))
+    print("Energy lost (J): " + str(Energy_Lost))
     print("System efficiency: " + str(Efficiency))
     print("Total electrical energy generated (J): " + str(Total_Electrical_Energy))
     print("Total electrical energy generated (kWh): " + str(Total_Electrical_Energy/3.6e+6))
@@ -432,24 +432,41 @@ def Run_Simulation(**kwargs):
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Volume (m^3)")
         second_ax.set_ylabel('Height (m)')
-       
         Filling_Plot = ax.plot(Global_Time, Global_Volume, label="Lagoon Volume", color="deepskyblue", linewidth=3)
-        Lagoon_Head_Plot = second_ax.plot(Global_Time, Global_Head, "--", label="Lagoon head", color="green", linewidth=2)
+        Lagoon_Head_Plot = second_ax.plot(Global_Time, Global_Head, "--", label="Lagoon height", color="green", linewidth=2)
         Tide_Height_Plot = second_ax.plot(Global_Time, Global_Tide, "--", label="Tide height", color ="blue", linewidth=2)
+        
+#        plt.title("Lagoon Volume, Lagoon Height and Tide Height Vs Time (Double Effect)", fontsize='30', weight='bold')
+#        ax.set_xlabel("Time (s)", fontsize='30', weight='bold')
+#        ax.set_ylabel('Height (m)', fontsize='30', weight='bold')
+#        Lagoon_Head_Plot = ax.plot(Global_Time, Global_Head, "--", label="Lagoon height", color="green", linewidth=2)
+#        Tide_Height_Plot = ax.plot(Global_Time, Global_Tide, "--", label="Tide height", color ="blue", linewidth=2)
+#        ax.set_ylabel('Height (m)')
         
         if Graph_Head == True:  
             Head_Difference_Plot = second_ax.plot(Global_Time, Global_Head_Difference, "--", label="Head difference", color ="orange", linewidth=2)
             Lines = Filling_Plot+Lagoon_Head_Plot+Tide_Height_Plot+Head_Difference_Plot
         else:
             Lines = Filling_Plot+Lagoon_Head_Plot+Tide_Height_Plot
+            #Lines = Lagoon_Head_Plot+Tide_Height_Plot
             
         Labels =[l.get_label() for l in Lines]
         ax.legend(Lines, Labels)
+        
+        #ax.legend(Lines, Labels, fontsize='30')
         
         plt.minorticks_on()
         ax.grid(which='major', color='black', linestyle='-', linewidth=1)
         ax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
         ax.set_ylim(0,2e7)
+        
+#        for tick in ax.xaxis.get_major_ticks():
+#                tick.label.set_fontsize(30) 
+#                tick.label.set_weight('bold') 
+#        
+#        for tick in ax.yaxis.get_major_ticks():
+#                tick.label.set_fontsize(30)
+#                tick.label.set_weight('bold') 
         
         if Graph_QV == True:
             
@@ -488,6 +505,19 @@ def Run_Simulation(**kwargs):
             plt.minorticks_on()
             Pax.grid(which='major', color='black', linestyle='-', linewidth=1)
             Pax.grid(which='minor', color='black', linestyle='--', linewidth=0.5)
+            
+#            plt.title("Mechanical & Electrical Power Vs Time", fontsize='30', weight='bold')
+#            Pax.set_xlabel("Time (s)", fontsize='30', weight='bold')
+#            Pax.set_ylabel("Power (w)", fontsize='30', weight='bold')
+#            Pax.legend(Lines, Labels, fontsize='30')
+#            
+#            for tick in Pax.xaxis.get_major_ticks():
+#                tick.label.set_fontsize(30) 
+#                tick.label.set_weight('bold') 
+#        
+#            for tick in Pax.yaxis.get_major_ticks():
+#                tick.label.set_fontsize(30)
+#                tick.label.set_weight('bold')
  
 def Evaluate_Tidal_Function(Type, Time):
     
@@ -498,8 +528,11 @@ def Evaluate_Tidal_Function(Type, Time):
         return (4*np.cos(2*np.pi*0.0000231*Time-np.pi)+6.5)
     elif Type == "Newport_1":
         Time += 14000
-        return ( (3.678*np.cos(2*np.pi*(2.236e-5)*Time+(48.06*(np.pi/180)))) + (1.4298*np.cos(2*np.pi*(2.239e-5)*Time-(130.6*(np.pi/180)))) + (1.4986*np.cos(2*np.pi*(2.315e-5)*Time+(176.7*(np.pi/180)))) + (0.7298*np.cos(2*np.pi*(2.194e-5)*Time-(53.75*(np.pi/180)))) + 6.278)
-           
+        return ( (3.678*np.cos(2*np.pi*(2.236e-5)*Time+(48.06*(np.pi/180)))) + 
+                 (1.4298*np.cos(2*np.pi*(2.239e-5)*Time-(130.6*(np.pi/180)))) +
+                 (1.4986*np.cos(2*np.pi*(2.315e-5)*Time+(176.7*(np.pi/180)))) +
+                 (0.7298*np.cos(2*np.pi*(2.194e-5)*Time-(53.75*(np.pi/180)))) + 6.278)
+            
 def Optimize(Item, Mode):
 
     global Global_Power, Profile_List, Eff_Turbine, Eff_Gearbox, Eff_Generator, Startup_Cost, Payback_Time
@@ -761,13 +794,14 @@ def Tidal_Function_Testing(Interval=86400):     #Shows a graph of a desired tida
         Time.append(i)
         #Tide_Height.append(6*np.cos(2*np.pi*0.0000231*i-np.pi)+6)
         #FFT_Tidal_Function.append((3.68*np.sin(2*np.pi*(2.236e-5)*i*10))+(1.499*np.cos(2*np.pi*(2.315e-5)*i*10))+(0.73*np.cos(2*np.pi*(2.195e-5)*i*10))+(0.3581*np.sin(2*np.pi*(2.322e-5)*i*10)))
-        FFT_Tidal_Function.append((3.678*np.cos(2*np.pi*(2.236e-5)*i+(48.06*(np.pi/180))))+(1.4298*np.cos(2*np.pi*(2.239e-5)*i-(130.6*(np.pi/180))))+(1.4986*np.cos(2*np.pi*(2.315e-5)*i+(176.7*(np.pi/180))))+(0.7298*np.cos(2*np.pi*(2.194e-5)*i-(53.75*(np.pi/180)))) + 6.278)
+        FFT_Tidal_Function.append((3.678*np.cos(2*np.pi*(2.236e-5)*i+(48.06*(np.pi/180))))+(1.4298*np.cos(2*np.pi*(2.239e-5)*i-(130.6*(np.pi/180))))+(1.4986*
+                                  np.cos(2*np.pi*(2.315e-5)*i+(176.7*(np.pi/180))))+(0.7298*np.cos(2*np.pi*(2.194e-5)*i-(53.75*(np.pi/180)))) + 6.278)
     
     plt.figure(figsize=plt.figaspect(1)*2)
     ax = plt.axes() #proj_type = 'ortho'
-    plt.title("Ideal Semidiurnal Tide Over 24 Hours")
-    ax.set_xlabel("Time (H)")
-    ax.set_ylabel("Head (m)")
+    plt.title("Contiuous Tidal Function Over 2019 (From Newport DFT)")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Ocean Height (m)")
     ax.plot(Time, FFT_Tidal_Function)
     plt.minorticks_on()
     #plt.xticks(xlim, [str(n).zfill(2) + ':00' for n in np.arange(0, 26,2)])

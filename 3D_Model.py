@@ -120,36 +120,39 @@ def Surface_Plot():
     #plt.axis('scaled')
     ax.plot_surface(Contour_Map_X, Contour_Map_Y, Contour_Map_Z, cmap='Greens', edgecolor="black")
 
-def Integrate_Volume(Height):
+def Integrate_Volume(Height):                   #Function for fiding the volume of water stored in the bay at a given height. Takes the height as the parameter.
     
-    Total = 0
-    for Count_Verticle in range(22):                #22 or 19 for just bay
-        for Count_Horizontal in range(12):          #12 or 10 for just bay
-            log.info("Current surface coordinate: (" + str(Count_Verticle) + "," + str(Count_Horizontal))
+    Total = 0                                   #Total variable used to store the running total of the volume as each grid element is summed together.
+    for Count_Verticle in range(22):            #For loop for iterating across the verticle axis of the coordinate grid.                                                                                   #22 or 19 for just bay
+        for Count_Horizontal in range(12):      #For loop for iterating across the horizontal axis of the coordinate grid.                                                                            #12 or 10 for just bay
+            log.info("Current surface coordinate: (" + str(Count_Verticle) + "," + str(Count_Horizontal))   #Logs debug data to the console.
+            #Calculates the XYZ coordinates of the next grid square to be sent to the volume function using the Contour_Map arrays.
             Coords_1 = [Contour_Map_X[Count_Verticle][Count_Horizontal], Contour_Map_Y[Count_Verticle][Count_Horizontal], Contour_Map_Z[Count_Verticle][Count_Horizontal]]
             Coords_2 = [Contour_Map_X[Count_Verticle][Count_Horizontal+1], Contour_Map_Y[Count_Verticle][Count_Horizontal+1], Contour_Map_Z[Count_Verticle][Count_Horizontal+1]]
             Coords_3 = [Contour_Map_X[Count_Verticle+1][Count_Horizontal+1], Contour_Map_Y[Count_Verticle+1][Count_Horizontal+1], Contour_Map_Z[Count_Verticle+1][Count_Horizontal]+1]
             Coords_4 = [Contour_Map_X[Count_Verticle+1][Count_Horizontal], Contour_Map_Y[Count_Verticle+1][Count_Horizontal], Contour_Map_Z[Count_Verticle+1][Count_Horizontal]]
+            #Calculates the volume of a grid square by passing the four coordinates to the Integrate_Element volume function and appends it to the Total variable.
             Total += Integrate_Element([Coords_1, Coords_2, Coords_3, Coords_4], Height, View=False, Tet=False, Log=False)
 
-    print(Total)
-    return Total
-
-def Volume_Vs_Height(Step):
+    print(Total)                                #Prints the total volume of the lagoon at the given height to the console.
+    return Total                                #Returns the total volume value.
+ 
+def Volume_Vs_Height(Step):                     #Function for calculating the volume height profile of the laggon at a given height step. The height step size is passed as a parameter.
     
-    global Heights, Volumes
-    Heights.clear()
-    Volumes.clear()
-    Heights = [0]
-    Volumes = [0]
-    Max_Iteration = int(13/Step)+1
+    global Heights, Volumes                     #Sets the Heights and Volumes lists to global so that the graphing function can access them.
+    Heights.clear()                             #Resets the Heights list.
+    Volumes.clear()                             #Resets the Volumes list.
+    Heights = [0]                               #Initializes the Heights list with 0.
+    Volumes = [0]                               #Initializes the Volumes list with 0.
+    Max_Iteration = int(13/Step)+1              #Calculates how many iterations of the loop will be needed from the height step size parameter such that the final height is 13 m.
     
-    for Iteration in range(Max_Iteration):
-        print("Iteration: " + str(Iteration) + " at height: " + str(Heights[Iteration]))
-        Volumes.append(Integrate_Volume(Heights[Iteration])) 
-        Heights.append(Heights[Iteration]+Step)
+    for Iteration in range(Max_Iteration):      #For loop for finding the lagoon volume across a range of ocean heights. 
+        print("Iteration: " + str(Iteration) + " at height: " + str(Heights[Iteration]))    #Prints iteration count and current height to the console.
+        #Calls the Integrate_Volume function and passes it the corresponding height for the current iteration and appends the result to the Volumes list.
+        Volumes.append(Integrate_Volume(Heights[Iteration]))
+        Heights.append(Heights[Iteration]+Step) #Appends the height used in the current iteration incremented by the step to the Heights list so it can be used in the next iteration.
     
-    return [Heights, Volumes]
+    return [Heights, Volumes]                   #Returns the a list containing the Heights Volumes lists so that they can be graphed.
 
 
 def Plot_Volume_Height(approx=False):
