@@ -57,6 +57,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 log = logging.getLogger()
 log.setLevel(logging.WARNING)
 
+Setup_Profile([[1,12],[0,5],[2,0]])
+Setup_Profile([[3,14],[0,5],[2,0],[4,7]])
+
 print("\n")
 print("======================================================================")
 print("IDP 3 Group 9: Tidal Lagoon Mathematical Model and Simulation Software")
@@ -850,7 +853,7 @@ def help(*args):
     if len(args) == 0:
     
         print("Help:")
-        print("\n1. To run a simulation, you must first setup an operating profile to tell the lagoon how it should operate. To learn how to do this, type help('profile'). Alternativly, you can use the defaul profile already built into the program.")
+        print("\n1. To run a simulation, you must first setup an operating profile to tell the lagoon how it should operate. To learn how to do this, type help('profile'). Alternativly, you can use a defaul profile already built into the program. Profile 1 is a simple single effect profile, profile 2 is a simple double effect profile.")
         print("\n2. To learn how to run a simulation, type help('sim').")
     
     elif args[0] == "profile":
@@ -862,14 +865,21 @@ State 1 - The lagoon is filling WITHOUT generating electricity. In this state, t
 State 2 - The lagoon is draining whilst generating electricity.\n\
 State 3 - The lagoon is filling whilst generating electricity.\n\
 State 4 - The lagoon is draining WITHOUT generating electricity.\n")
-        print("The operational algorithm governs which states the lagoon switches between and when. The algorithm is built up of stages, each stage coresponds to one state and the condition that must be met to move to the next stage (state).")
+        print("The operational algorithm governs which states the lagoon switches between and when. The algorithm is built up of stages, each stage coresponds to one state and the condition that must be met to move to the next stage (state).\
+              For example: Setup_Profile([[1,12],[0,5],[2,0]]) has 3 stages. The first stage says the simulation will start in state 1 and will transition to the next state when the water height reaches 12 m, the second state is state 0 and\
+ the transition from that is when the water height is at 5 m. The final state is state 2, when the water level reaches 0 m then cycle will loop back to state 1. The water height is in reference to the lagoon or ocean height\
+ depending on what makes sense for that particular state. Similarly, transitions are taken when the water height is above or below the triggering value, not equal and is again dependant on the particular state. As a safety\
+ mechanism to ensure the simulation always runs, if a state transition isnt met and the tide changes direction, the state will switch despite the condition not being\
+ met. Any profile can theoretically be constructed with any number of stages using this template. Built in profiles 1 and 2 are single and double effect modes respectivly.")
     
         
     elif args[0] == "sim":
         
         print("Help simulation:")
-        print("\nHere is some help info on running a simulation")
-        
+        print("\nTo run a simulation, run the following function call and changes the parameters as you desire: \n")
+        print('Run_Simulation(step=100, tidal_function="Newport_1", turbines=25, diameter=5.88, slucies=0, sluice_size=80, profile=2, time=60*60*24*365, econ=True, output=False, graphs=True, graph_head=False, graph_QV=True, graph_P=True))')
+        print("\nThe above command executes a simulation using our final lagoon configuration over the course of a year. Alternativly, you can change the tidal_function parameter to 'sine', the time (in seconds) to a diffrerent amount and any other numerical value to what you want to test. The final boolen parameters are used to toggle the display opf certain graphs as well as debug information to the console. Make sure you have setup a profile for your simulation run or use one of the two built in (profiles 1 or 2).")
+            
     else:
         
         print("Help command unknown, are you sure you typed it correctly?")
